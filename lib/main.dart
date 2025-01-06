@@ -1,4 +1,5 @@
 import 'package:calai/Screens/Dashboard/Dashboard.dart';
+import 'package:calai/Screens/SplashScreen/SplashScreen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -30,14 +31,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return const DashboardScreen();
-    // Scaffold(
-    //   body: const SplashScreen(),
-    //   floatingActionButton: FloatingActionButton(
-    //     onPressed: _incrementCounter,
-    //     tooltip: 'Increment',
-    //     child: const Icon(Icons.add),
-    //   ), 
-    // );
+    return const SplashScreen();
   }
 }

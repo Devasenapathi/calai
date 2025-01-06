@@ -1,5 +1,6 @@
 import 'package:calai/utils/Color_resources.dart';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class HeightSelectorScreen extends StatefulWidget {
   const HeightSelectorScreen({super.key});
@@ -344,6 +345,182 @@ class _DateScrollerState extends State<DateScroller> {
             style: const TextStyle(fontSize: 18),
           ),
         ],
+      ),
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+class WeightGraphScreen extends StatefulWidget {
+  @override
+  _WeightGraphScreenState createState() => _WeightGraphScreenState();
+}
+
+class _WeightGraphScreenState extends State<WeightGraphScreen> {
+  List<FlSpot> _dataPoints = [];
+  String _selectedPeriod = "90 Days";
+
+  @override
+  void initState() {
+    super.initState();
+    _updateDataPoints("90 Days");
+  }
+
+  void _updateDataPoints(String period) {
+    // Dummy weight data
+    final allData = {
+      "January": 70.0,
+      "February": 71.0,
+      "March": 69.5,
+      "April": 72.0,
+      "May": 73.0,
+      "June": 74.5,
+      "July": 74.0,
+      "August": 73.5,
+      "September": 72.5,
+      "October": 72.0,
+      "November": 71.5,
+      "December": 70.5,
+    };
+
+    List<String> months = allData.keys.toList();
+
+    // Filter data based on selected period
+    int count = 0;
+    switch (period) {
+      case "90 Days":
+        count = 3;
+        break;
+      case "6 Months":
+        count = 6;
+        break;
+      case "1 Year":
+        count = 12;
+        break;
+    }
+
+    // Convert data into points
+    _dataPoints = List.generate(
+      count,
+      (index) => FlSpot(
+        index.toDouble(),
+        allData[months[index]]!,
+      ),
+    );
+
+    setState(() {
+      _selectedPeriod = period;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Weight Progress Graph")),
+      body: Container(
+        height: MediaQuery.of(context).size.height*0.3,
+        width: MediaQuery.of(context).size.width*0.9,
+        child: Column(
+          children: [
+            // Graph
+            Expanded(
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(show: true),
+                  titlesData: FlTitlesData(
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          // Display months as labels
+                          final months = [
+                            "Jan",
+                            "Feb",
+                            "Mar",
+                            "Apr",
+                            "May",
+                            "Jun",
+                            "Jul",
+                            "Aug",
+                            "Sep",
+                            "Oct",
+                            "Nov",
+                            "Dec",
+                          ];
+                          if (value.toInt() < months.length) {
+                            return Text(months[value.toInt()]);
+                          }
+                          return Text('');
+                        },
+                      ),
+                    ),
+                  ),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: _dataPoints,
+                      isCurved: true,
+                      barWidth: 2,
+                      color: Colors.black,
+                      // dotData: FlDotData(show: true),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            // Buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () => _updateDataPoints("90 Days"),
+                  child: Text("90 Days"),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(
+                        _selectedPeriod == "90 Days"
+                            ? Colors.blue
+                            : Colors.grey),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => _updateDataPoints("6 Months"),
+                  child: Text("6 Months"),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(
+                        _selectedPeriod == "6 Months"
+                            ? Colors.blue
+                            : Colors.grey),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => _updateDataPoints("1 Year"),
+                  child: Text("1 Year"),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(
+                        _selectedPeriod == "1 Year"
+                            ? Colors.blue
+                            : Colors.grey),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

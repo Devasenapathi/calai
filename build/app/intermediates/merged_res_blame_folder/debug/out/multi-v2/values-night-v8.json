@@ -4,7 +4,7 @@
             "outputFile": "com.example.calai.app-mergeDebugResources-24:/values-night-v8/values-night-v8.xml",
             "map": [
                 {
-                    "source": "/Users/shinelogics.in/Documents/calai/android/app/src/main/res/values-night/styles.xml",
+                    "source": "/Users/shinelogics.in/Documents/backup/calai/android/app/src/main/res/values-night/styles.xml",
                     "from": {
                         "startLines": "3,14",
                         "startColumns": "4,4",

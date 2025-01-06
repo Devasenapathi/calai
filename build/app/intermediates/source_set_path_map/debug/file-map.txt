@@ -18,10 +18,10 @@ com.example.calai.app-core-1.13.1-16 /Users/shinelogics.in/.gradle/caches/transf
 com.example.calai.app-lifecycle-runtime-2.7.0-17 /Users/shinelogics.in/.gradle/caches/transforms-3/c8996eb6ce8efabee1883fe1486006c9/transformed/lifecycle-runtime-2.7.0/res
 com.example.calai.app-jetified-lifecycle-viewmodel-savedstate-2.7.0-18 /Users/shinelogics.in/.gradle/caches/transforms-3/ca2eed4266fd24517e583e6618aa3924/transformed/jetified-lifecycle-viewmodel-savedstate-2.7.0/res
 com.example.calai.app-jetified-tracing-1.2.0-19 /Users/shinelogics.in/.gradle/caches/transforms-3/fee79d0d8ef3af5dbc14ef6d22d028cf/transformed/jetified-tracing-1.2.0/res
-com.example.calai.app-debug-20 /Users/shinelogics.in/Documents/calai/android/app/src/debug/res
-com.example.calai.app-main-21 /Users/shinelogics.in/Documents/calai/android/app/src/main/res
-com.example.calai.app-pngs-22 /Users/shinelogics.in/Documents/calai/build/app/generated/res/pngs/debug
-com.example.calai.app-resValues-23 /Users/shinelogics.in/Documents/calai/build/app/generated/res/resValues/debug
-com.example.calai.app-packageDebugResources-24 /Users/shinelogics.in/Documents/calai/build/app/intermediates/incremental/debug/packageDebugResources/merged.dir
-com.example.calai.app-packageDebugResources-25 /Users/shinelogics.in/Documents/calai/build/app/intermediates/incremental/debug/packageDebugResources/stripped.dir
-com.example.calai.app-merged_res-26 /Users/shinelogics.in/Documents/calai/build/app/intermediates/merged_res/debug
+com.example.calai.app-debug-20 /Users/shinelogics.in/Documents/backup/calai/android/app/src/debug/res
+com.example.calai.app-main-21 /Users/shinelogics.in/Documents/backup/calai/android/app/src/main/res
+com.example.calai.app-pngs-22 /Users/shinelogics.in/Documents/backup/calai/build/app/generated/res/pngs/debug
+com.example.calai.app-resValues-23 /Users/shinelogics.in/Documents/backup/calai/build/app/generated/res/resValues/debug
+com.example.calai.app-packageDebugResources-24 /Users/shinelogics.in/Documents/backup/calai/build/app/intermediates/incremental/debug/packageDebugResources/merged.dir
+com.example.calai.app-packageDebugResources-25 /Users/shinelogics.in/Documents/backup/calai/build/app/intermediates/incremental/debug/packageDebugResources/stripped.dir
+com.example.calai.app-merged_res-26 /Users/shinelogics.in/Documents/backup/calai/build/app/intermediates/merged_res/debug

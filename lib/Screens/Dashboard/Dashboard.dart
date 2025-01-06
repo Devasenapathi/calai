@@ -1,4 +1,7 @@
+import 'package:calai/Screens/Analytics/Analytics.dart';
 import 'package:calai/Screens/Dashboard/Components/DashboardMainScreen.dart';
+import 'package:calai/Screens/Dashboard/Components/StreakScreen.dart';
+import 'package:calai/Screens/Settings/Settings.dart';
 import 'package:calai/utils/Color_resources.dart';
 import 'package:flutter/material.dart';
 
@@ -10,13 +13,11 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-
-  int _selectedIndex = 0;
-
+    int _selectedIndex = 0;
   static final List<Widget> _pages = <Widget>[
-    const Center(child: Text('Home Page')),
-    const Center(child: Text('Search Page')),
-    const Center(child: Text('Profile Page')),
+    const Dashboardmainscreen(),
+    const AnalyticsScreen(),
+    const SettingsScreen()
   ];
 
   void _onItemTapped(int index) {
@@ -24,77 +25,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _selectedIndex = index;
     });
   }
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GREY1,
+      backgroundColor: WHITE,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           print('FAB pressed!');
         },
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(50),
+          ),
         backgroundColor: BLACK,
-        child: const Icon(Icons.add,color: WHITE,),
+        child: const Icon(
+          Icons.add,
+          color: WHITE,
+        ),
       ),
 
+      resizeToAvoidBottomInset: false,
+      
       bottomNavigationBar: BottomAppBar(
+        padding:const EdgeInsets.all(0),
+        clipBehavior: Clip.antiAlias,
         shape: const CircularNotchedRectangle(),
         child: BottomNavigationBar(
-          backgroundColor: GREY1,
+          fixedColor: BLACK,
+          backgroundColor:WHITE,
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(
-              icon: Icon(Icons.home),
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: 'Search',
+              icon: Icon(Icons.analytics_outlined),
+              activeIcon: Icon(Icons.analytics),
+              label: 'Analytics',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle),
-              label: 'Profile',
+              icon: Icon(Icons.settings_outlined),
+              activeIcon: Icon(Icons.settings),
+              label: 'Settings',
             ),
           ],
         ),
       ),
-
-
-      appBar: AppBar(
-        backgroundColor: GREY1,
-        actions: [
-          const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text("Cal AI",style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
-          ),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Container(
-              width: 60,
-              height: 30,
-              decoration: BoxDecoration(
-                color: WHITE,
-                borderRadius: BorderRadius.circular(50)
-              ),
-              child: const Padding(
-                padding: EdgeInsets.fromLTRB(14.0,5.0,14.0,5.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("1"),
-                    SizedBox(width: 10,),
-                    Text("0")
-                  ],
-                ),
-              ),
-            ),
-          )
-        ],
-      ),
-      body: const Dashboardmainscreen(),
-    ) ;
+      
+      body: _pages[_selectedIndex]
+    );
   }
 }
