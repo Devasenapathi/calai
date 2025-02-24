@@ -1,6 +1,6 @@
 import 'package:calai/Screens/Dashboard/Components/StreakScreen.dart';
-import 'package:calai/Services/Services.dart';
 import 'package:calai/utils/Color_resources.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -21,10 +21,35 @@ class _DashboardmainscreenState extends State<Dashboardmainscreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      streakOpen(); 
+      streakOpen();
     });
     _dates = _generateDateList();
+    findUserByEmail("devahari420@gmail.com");
     _scrollController = ScrollController();
+  }
+
+  Future<QueryDocumentSnapshot<Object?>?> findUserByEmail(String email) async {
+    try {
+      // Reference to the collection where users are stored
+      CollectionReference usersCollection =
+          FirebaseFirestore.instance.collection('users');
+
+      // Query to find the document with the matching email
+      QuerySnapshot querySnapshot =
+          await usersCollection.where('email', isEqualTo: email).limit(1).get();
+
+      // Check if any documents match the query
+      if (querySnapshot.docs.isNotEmpty) {
+        print(querySnapshot.docs.first.data());
+        return querySnapshot.docs.first;
+      } else {
+        debugPrint("No user found with email: $email");
+        return null;
+      }
+    } catch (e) {
+      debugPrint("Error finding user: $e");
+      return null;
+    }
   }
 
   List<DateTime> _generateDateList() {
@@ -244,14 +269,12 @@ class _DashboardmainscreenState extends State<Dashboardmainscreen> {
                                   const AlwaysStoppedAnimation<Color>(GREY),
                             ),
                           ),
-                          const Text(
-                            '70', // Text to display
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
+                          const Image(
+                            image:
+                                AssetImage("assets/images/fireflame_black.png"),
+                            height: 30,
+                            width: 30,
+                          )
                         ],
                       ),
                     ],
@@ -262,7 +285,7 @@ class _DashboardmainscreenState extends State<Dashboardmainscreen> {
             const SizedBox(
               height: 20,
             ),
-            Container(
+            SizedBox(
               width: size.width * 0.9,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -310,14 +333,20 @@ class _DashboardmainscreenState extends State<Dashboardmainscreen> {
                                                   Color>(GREY),
                                         ),
                                       ),
-                                      const Text(
-                                        '70', // Text to display
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
-                                        ),
-                                      ),
+                                      const Image(
+                                        image: AssetImage(
+                                            "assets/images/thunder_color.png"),
+                                        height: 30,
+                                        width: 30,
+                                      )
+                                      // const Text(
+                                      //   '70', // Text to display
+                                      //   style: TextStyle(
+                                      //     fontSize: 18,
+                                      //     fontWeight: FontWeight.bold,
+                                      //     color: Colors.black,
+                                      //   ),
+                                      // ),
                                     ],
                                   ),
                                 ),
@@ -365,14 +394,7 @@ class _DashboardmainscreenState extends State<Dashboardmainscreen> {
                                                   Color>(GREY),
                                         ),
                                       ),
-                                      const Text(
-                                        '70', // Text to display
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
-                                        ),
-                                      ),
+                                      const Image(image: AssetImage("assets/images/grains.png"),height: 30,width: 30,)
                                     ],
                                   ),
                                 ),
@@ -421,14 +443,7 @@ class _DashboardmainscreenState extends State<Dashboardmainscreen> {
                                                   Color>(GREY),
                                         ),
                                       ),
-                                      const Text(
-                                        '70', // Text to display
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
-                                        ),
-                                      ),
+                                      const Image(image: AssetImage("assets/images/droplet.png"),height: 30,width: 30,)
                                     ],
                                   ),
                                 ),

@@ -191,20 +191,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       return ElevatedButton(
                         onPressed: () => _updateDataPoints(period),
                         style: ButtonStyle(
-                          padding: MaterialStateProperty.all(EdgeInsets.zero),
-                          foregroundColor: MaterialStateProperty.all(
+                          padding: WidgetStateProperty.all(EdgeInsets.zero),
+                          foregroundColor: WidgetStateProperty.all(
                             _selectedPeriod == period ? GREY : GREY1,
                           ),
-                          elevation: MaterialStateProperty.all(
+                          elevation: WidgetStateProperty.all(
                             _selectedPeriod == period ? 3 : 0,
                           ),
                           shape:
-                              MaterialStateProperty.all<RoundedRectangleBorder>(
+                              WidgetStateProperty.all<RoundedRectangleBorder>(
                             RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(5),
                             ),
                           ),
-                          backgroundColor: MaterialStateProperty.all(
+                          backgroundColor: WidgetStateProperty.all(
                             _selectedPeriod == period ? WHITE : GREY2,
                           ),
                         ),
@@ -217,7 +217,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   ),
                 ),
         
-                Container(
+                SizedBox(
                   height: MediaQuery.of(context).size.height * 0.22,
                   width: MediaQuery.of(context).size.width * 0.9,
                   child: Column(
@@ -337,20 +337,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             return ElevatedButton(
                               onPressed: () => _updateDataPoints(period),
                               style: ButtonStyle(
-                                padding: MaterialStateProperty.all(EdgeInsets.zero),
-                                foregroundColor: MaterialStateProperty.all(
+                                padding: WidgetStateProperty.all(EdgeInsets.zero),
+                                foregroundColor: WidgetStateProperty.all(
                                   _selectedPeriod == period ? GREY : GREY1,
                                 ),
-                                elevation: MaterialStateProperty.all(
+                                elevation: WidgetStateProperty.all(
                                   _selectedPeriod == period ? 3 : 0,
                                 ),
-                                shape: MaterialStateProperty.all<
+                                shape: WidgetStateProperty.all<
                                     RoundedRectangleBorder>(
                                   RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(5),
                                   ),
                                 ),
-                                backgroundColor: MaterialStateProperty.all(
+                                backgroundColor: WidgetStateProperty.all(
                                   _selectedPeriod == period ? WHITE : GREY2,
                                 ),
                               ),
@@ -384,8 +384,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               ],
                             )
                           ],),
-                          SizedBox(height: 20,),
-                          Container(
+                          const SizedBox(height: 20,),
+                          SizedBox(
                             height: MediaQuery.of(context).size.height * 0.22,
                             width: MediaQuery.of(context).size.width * 0.9,
                             child: Expanded(

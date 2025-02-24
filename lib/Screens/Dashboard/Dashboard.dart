@@ -1,6 +1,6 @@
 import 'package:calai/Screens/Analytics/Analytics.dart';
+import 'package:calai/Screens/Camera/CameraScreen.dart';
 import 'package:calai/Screens/Dashboard/Components/DashboardMainScreen.dart';
-import 'package:calai/Screens/Dashboard/Components/StreakScreen.dart';
 import 'package:calai/Screens/Settings/Settings.dart';
 import 'package:calai/utils/Color_resources.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +31,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: WHITE,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          print('FAB pressed!');
+          Navigator.of(context).push(MaterialPageRoute(
+              builder: (BuildContext context) => const CameraScreen()));
+
         },
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(50),

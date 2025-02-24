@@ -1,8 +1,18 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'dart:async';
+
+import 'package:calai/Screens/Dashboard/Dashboard.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 import 'package:calai/utils/Color_resources.dart';
 import 'package:calai/utils/ratings.dart';
-import 'package:flutter/material.dart';
+import 'package:in_app_review/in_app_review.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CustomerDetailsCollectScreen extends StatefulWidget {
   const CustomerDetailsCollectScreen({super.key});
@@ -16,11 +26,13 @@ class _CustomerDetailsCollectScreenState
     extends State<CustomerDetailsCollectScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late FirebaseFirestore db = FirebaseFirestore.instance;
   String gender = "";
   String workouts = "";
   String otherApps = "";
   String diet = "";
   String accomplish = "";
+  String? token = "";
 
   List<String> texts = [
     "Customizing health plan...",
@@ -28,30 +40,98 @@ class _CustomerDetailsCollectScreenState
     "Estimating your metabolic age..."
   ];
 
-  List<String> values = [
-    "Calories",
-    "Crabs",
-    "Protiens",
-    "Fats"
-  ];
+  List<String> values = ["Calories", "Crabs", "Protiens", "Fats"];
   int currentTextIndex = 0;
 
-  int feet = 3;
-  int inches = 1;
+  int feet = 5;
+  int inches = 5;
+  int cm = 100;
   int weight = 50;
+  String height = "";
 
-  int day = 1;
-  int month = 1;
-  int year = 1;
+  int day = 10;
+  int month = 5;
+  int year = 30;
 
   bool isMetric = false;
   double progress = 0.0;
+  var box;
+
+  final InAppReview inAppReview = InAppReview.instance;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 17, vsync: this);
+    _tabController = TabController(length: 14, vsync: this);
     _tabController.addListener(_updateProgress);
+  }
+
+  Future<UserCredential?> signInWithGoogle() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      token = prefs.getString('token');
+
+      if (token == null) {
+        final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+        if (googleUser == null) {
+          print("Google Sign-In aborted by user");
+          return null;
+        }
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+
+        final OAuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        final UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithCredential(credential);
+
+        prefs.setString('token', userCredential.credential!.accessToken!);
+
+        final user = <String, dynamic>{
+          "name": userCredential.user!.displayName,
+          "email": userCredential.user!.email,
+          "profilePhoto": userCredential.user!.photoURL,
+          "accessToken": userCredential.credential!.accessToken,
+          "token": userCredential.credential!.token,
+          "gender": gender,
+          "workouts": workouts,
+          "otherApps": otherApps,
+          "diet": diet,
+          "height": height,
+          "weight": weight,
+          "measures": '',
+          "dob": "$day/$month/$year",
+          "accomplish": accomplish,
+          "notification": false,
+          "isDelete": false,
+          "status": 1,
+        };
+        // Add a new document with a generated ID
+        db.collection("users").add(user).then((DocumentReference doc) => {
+              print(doc),
+              print("11111111111111111111111"),
+              prefs.setString('id', doc.id),
+              print('DocumentSnapshot added with ID: ${doc.id}')
+            });
+
+        return userCredential;
+      } else {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(
+            builder: (BuildContext context) => const DashboardScreen()));
+      }
+    } catch (e) {
+      print("Error during Google Sign-In: $e");
+      return null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   void _updateProgress() {
@@ -84,12 +164,6 @@ class _CustomerDetailsCollectScreenState
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return Scaffold(
@@ -97,25 +171,30 @@ class _CustomerDetailsCollectScreenState
         actions: [
           Row(
             children: [
-              SizedBox(
-                width: 50,
-                height: 50,
-                child: Container(
-                  decoration: const BoxDecoration(
-                      color: GREY1,
-                      borderRadius: BorderRadius.all(Radius.circular(50))),
+              Container(
+                height: 30,
+                width: 30,
+                decoration: const BoxDecoration(
+                  color: GREY1,
+                  borderRadius: BorderRadius.all(Radius.circular(50)),
+                ),
+                child: Center(
+                  // Ensures the IconButton is centered
                   child: IconButton(
                     onPressed: () {
                       _updateBackProgress();
                     },
                     icon: const Icon(Icons.arrow_back),
+                    iconSize:
+                        16, // Adjust size if needed to fit well in the container
                   ),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
                 child: SizedBox(
-                  width: size.width * 0.9,
+                  width: size.width * 0.8,
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 5.0,
@@ -149,9 +228,6 @@ class _CustomerDetailsCollectScreenState
                 _buildSettingTab(),
                 _buildLoginTab(),
                 _buildCompletionTab(),
-                _buildTabContent("Step 1", "This is the first step."),
-                _buildTabContent("Step 2", "This is the second step."),
-                _buildTabContent("Step 3", "This is the third step."),
               ],
             ),
           ),
@@ -166,6 +242,7 @@ class _CustomerDetailsCollectScreenState
       padding: const EdgeInsets.all(20.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             "Choose Your Gender",
@@ -173,84 +250,86 @@ class _CustomerDetailsCollectScreenState
           ),
           const Text("This will be used to callibrate your custom plan"),
           const Spacer(),
-          Column(
-            children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: gender == "Male" ? WHITE : BLACK,
-                  backgroundColor: gender == "Male" ? BLACK : GREY2,
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
+          SizedBox(
+            height: size.height * 0.3,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: gender == "Male" ? WHITE : BLACK,
+                    backgroundColor: gender == "Male" ? BLACK : GREY2,
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    minimumSize: Size(size.width * 1, size.height * 0.08),
                   ),
-                  minimumSize: Size(size.width * 1, 50),
+                  onPressed: () {
+                    setState(() {
+                      gender = "Male";
+                    });
+                  },
+                  child: const Text("Male"),
                 ),
-                onPressed: () {
-                  setState(() {
-                    gender = "Male";
-                  });
-                },
-                child: const Text("Male"),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: gender == "Female" ? WHITE : BLACK,
-                  backgroundColor: gender == "Female" ? BLACK : GREY2,
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: gender == "Female" ? WHITE : BLACK,
+                    backgroundColor: gender == "Female" ? BLACK : GREY2,
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    minimumSize: Size(size.width * 1, size.height * 0.08),
+                    // textStyle: const TextStyle(fontSize: 18.0),
                   ),
-                  minimumSize: Size(size.width * 1, 50),
-                  textStyle: const TextStyle(fontSize: 18.0),
+                  onPressed: () {
+                    setState(() {
+                      gender = "Female";
+                    });
+                  },
+                  child: const Text("Female"),
                 ),
-                onPressed: () {
-                  setState(() {
-                    gender = "Female";
-                  });
-                },
-                child: const Text("Female"),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: gender == "Others" ? WHITE : BLACK,
-                  backgroundColor: gender == "Others" ? BLACK : GREY2,
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: gender == "Others" ? WHITE : BLACK,
+                    backgroundColor: gender == "Others" ? BLACK : GREY2,
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    minimumSize: Size(size.width * 1, size.height * 0.08),
                   ),
-                  minimumSize: Size(size.width * 1, 50),
+                  onPressed: () {
+                    setState(() {
+                      gender = "Others";
+                    });
+                  },
+                  child: const Text("Others"),
                 ),
-                onPressed: () {
-                  setState(() {
-                    gender = "Others";
-                  });
-                },
-                child: const Text("Others"),
-              ),
-            ],
+              ],
+            ),
           ),
           const Spacer(),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               foregroundColor: WHITE,
-              backgroundColor: BLACK,
+              backgroundColor: gender.isEmpty ? GREY1 : BLACK,
               elevation: 1,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),
               ),
-              minimumSize: Size(size.width * 1, 50),
+              minimumSize: Size(size.width * 1, size.height * 0.08),
             ),
-            onPressed: () {
+            onPressed: () async {
               if (gender.isNotEmpty) {
+                // await manager.init();
+                // updateData(gender,"gender");
                 if (_tabController.index < _tabController.length - 1) {
                   _tabController.animateTo(_tabController.index + 1);
                 }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please select your gender")),
-                );
               }
             },
             child: const Text("Next Step"),
@@ -283,7 +362,7 @@ class _CustomerDetailsCollectScreenState
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  minimumSize: Size(size.width * 1, 70),
+                  minimumSize: Size(size.width * 1, size.height * 0.08),
                 ),
                 onPressed: () {
                   setState(() {
@@ -312,7 +391,7 @@ class _CustomerDetailsCollectScreenState
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  minimumSize: Size(size.width * 1, 70),
+                  minimumSize: Size(size.width * 1, size.height * 0.08),
                 ),
                 onPressed: () {
                   setState(() {
@@ -344,7 +423,7 @@ class _CustomerDetailsCollectScreenState
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  minimumSize: Size(size.width * 1, 70),
+                  minimumSize: Size(size.width * 1, size.height * 0.08),
                 ),
                 onPressed: () {
                   setState(() {
@@ -370,22 +449,18 @@ class _CustomerDetailsCollectScreenState
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               foregroundColor: WHITE,
-              backgroundColor: BLACK,
+              backgroundColor: workouts.isNotEmpty ? BLACK : GREY1,
               elevation: 1,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),
               ),
-              minimumSize: Size(size.width * 1, 50),
+              minimumSize: Size(size.width * 1, size.height * 0.08),
             ),
             onPressed: () {
               if (workouts.isNotEmpty) {
                 if (_tabController.index < _tabController.length - 1) {
                   _tabController.animateTo(_tabController.index + 1);
                 }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please select any option")),
-                );
               }
             },
             child: const Text("Next Step"),
@@ -417,7 +492,7 @@ class _CustomerDetailsCollectScreenState
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  minimumSize: Size(size.width * 1, 70),
+                  minimumSize: Size(size.width * 1, size.height * 0.08),
                 ),
                 onPressed: () {
                   setState(() {
@@ -443,8 +518,7 @@ class _CustomerDetailsCollectScreenState
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  minimumSize: Size(size.width * 1, 70),
-                  textStyle: const TextStyle(fontSize: 18.0),
+                  minimumSize: Size(size.width * 1, size.height * 0.08),
                 ),
                 onPressed: () {
                   setState(() {
@@ -467,22 +541,18 @@ class _CustomerDetailsCollectScreenState
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               foregroundColor: WHITE,
-              backgroundColor: BLACK,
+              backgroundColor: otherApps.isNotEmpty ? BLACK : GREY1,
               elevation: 1,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),
               ),
-              minimumSize: Size(size.width * 1, 50),
+              minimumSize: Size(size.width * 1, size.height * 0.08),
             ),
             onPressed: () {
               if (otherApps.isNotEmpty) {
                 if (_tabController.index < _tabController.length - 1) {
                   _tabController.animateTo(_tabController.index + 1);
                 }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please select any one")),
-                );
               }
             },
             child: const Text("Next Step"),
@@ -508,228 +578,273 @@ class _CustomerDetailsCollectScreenState
           Column(
             children: [
               SizedBox(
-                width: 350,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      children: [
-                        const Text("Imperial"),
-                        Row(
-                          children: [
-                            isMetric
-                                ? Row(
-                                    children: [
-                                      SizedBox(
-                                        height: 100,
-                                        width: 80,
-                                        child: ListWheelScrollView.useDelegate(
-                                          itemExtent: 50,
-                                          diameterRatio: 1.5,
-                                          childDelegate:
-                                              ListWheelChildBuilderDelegate(
-                                            builder: (context, index) {
-                                              bool isSelected =
-                                                  (index + 3) == feet;
-                                              return Container(
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  color: isSelected
-                                                      ? GREY1
-                                                      : Colors.transparent,
-                                                ),
-                                                child: Center(
-                                                  child: Text(
-                                                    '${index + 3} ft',
-                                                    style: const TextStyle(
-                                                        fontSize: 16),
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            childCount: 8,
-                                          ),
-                                          onSelectedItemChanged: (index) {
-                                            setState(() {
-                                              feet = index + 3;
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(
-                                        width: 10,
-                                      ),
-                                      SizedBox(
-                                        height: 100,
-                                        width: 80,
-                                        // decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-                                        child: ListWheelScrollView.useDelegate(
-                                          itemExtent: 50,
-                                          diameterRatio: 1.5,
-                                          childDelegate:
-                                              ListWheelChildBuilderDelegate(
-                                            builder: (context, index) {
-                                              bool isSelected =
-                                                  index + 1 == inches;
-                                              return Container(
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  color: isSelected
-                                                      ? GREY1
-                                                      : Colors.transparent,
-                                                ),
-                                                child: Center(
-                                                  child: Text(
-                                                    '${index + 1} in',
-                                                    style: const TextStyle(
-                                                        fontSize: 16),
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            childCount: 12,
-                                          ),
-                                          onSelectedItemChanged: (index) {
-                                            setState(() {
-                                              inches = index + 1;
-                                            });
-                                          },
-                                        ),
-                                      )
-                                    ],
-                                  )
-                                : SizedBox(
-                                    height: 100,
-                                    width: 80,
-                                    // decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-                                    child: ListWheelScrollView.useDelegate(
-                                      itemExtent: 50,
-                                      diameterRatio: 1.5,
-                                      childDelegate:
-                                          ListWheelChildBuilderDelegate(
-                                        builder: (context, index) {
-                                          bool isSelected = index + 1 == inches;
-                                          return Container(
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                              color: isSelected
-                                                  ? GREY1
-                                                  : Colors.transparent,
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                '${index + 1} cm',
-                                                style: const TextStyle(
-                                                    fontSize: 16),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        childCount: 300,
-                                      ),
-                                      onSelectedItemChanged: (index) {
-                                        setState(() {
-                                          inches = index + 1;
-                                        });
-                                      },
-                                    ),
-                                  )
-                          ],
-                        )
-                      ],
-                    ),
-                    const Spacer(),
-                    Switch(
-                      activeColor: BLACK,
-                      value: isMetric,
-                      onChanged: (bool newValue) {
-                        setState(() {
-                          isMetric = newValue;
-                        });
-                      },
-                    ),
-                    const Spacer(),
-                    Column(
-                      children: [
-                        const Text("Metrics"),
-                        isMetric
-                            ? SizedBox(
-                                height: 100,
-                                width: 80,
-                                child: ListWheelScrollView.useDelegate(
-                                  itemExtent: 50,
-                                  diameterRatio: 1.5,
-                                  childDelegate: ListWheelChildBuilderDelegate(
-                                    builder: (context, index) {
-                                      bool isSelected = (index + 1) == weight;
-                                      return Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          color: isSelected
-                                              ? GREY1
-                                              : Colors.transparent,
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '${index + 1} kg',
-                                            style:
-                                                const TextStyle(fontSize: 16),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    childCount: 200,
-                                  ),
-                                  onSelectedItemChanged: (index) {
-                                    setState(() {
-                                      weight = index + 1;
-                                    });
-                                  },
-                                ),
-                              )
-                            : SizedBox(
-                                height: 100,
-                                width: 80,
-                                child: ListWheelScrollView.useDelegate(
-                                  itemExtent: 50,
-                                  diameterRatio: 1.5,
-                                  childDelegate: ListWheelChildBuilderDelegate(
-                                    builder: (context, index) {
-                                      bool isSelected = (index + 1) == weight;
-                                      return Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          color: isSelected
-                                              ? GREY1
-                                              : Colors.transparent,
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '${index + 1} lb',
-                                            style:
-                                                const TextStyle(fontSize: 16),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    childCount: 200,
-                                  ),
-                                  onSelectedItemChanged: (index) {
-                                    setState(() {
-                                      weight = index + 1;
-                                    });
-                                  },
-                                ),
-                              )
-                      ],
-                    )
-                  ],
+                width: size.width * 1,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Column(
+                        children: [
+                          Text(
+                            "Imperial",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          Text(
+                            "Height",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          )
+                        ],
+                      ),
+                      const Spacer(),
+                      Switch(
+                        activeColor: BLACK,
+                        value: isMetric,
+                        onChanged: (bool newValue) {
+                          setState(() {
+                            isMetric = newValue;
+                          });
+                        },
+                      ),
+                      const Spacer(),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Metrics",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          Text(
+                            "Weight",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              Column(
+                children: [
+                  Row(
+                    children: [
+                      isMetric
+                          ? Row(
+                              children: [
+                                SizedBox(
+                                  height: 200,
+                                  width: 80,
+                                  child: ListWheelScrollView.useDelegate(
+                                    controller: FixedExtentScrollController(
+                                        initialItem: feet - 3),
+                                    itemExtent: 50,
+                                    diameterRatio: 5,
+                                    childDelegate:
+                                        ListWheelChildBuilderDelegate(
+                                      builder: (context, index) {
+                                        bool isSelected = (index + 3) == feet;
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            color: isSelected
+                                                ? GREY1
+                                                : Colors.transparent,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '${index + 3} ft',
+                                              style:
+                                                  const TextStyle(fontSize: 16),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      childCount: 8,
+                                    ),
+                                    onSelectedItemChanged: (index) {
+                                      setState(() {
+                                        feet = index + 3;
+                                      });
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: 10,
+                                ),
+                                SizedBox(
+                                  height: 200,
+                                  width: 80,
+                                  // decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
+                                  child: ListWheelScrollView.useDelegate(
+                                    controller: FixedExtentScrollController(
+                                        initialItem: inches - 1),
+                                    itemExtent: 50,
+                                    diameterRatio: 5,
+                                    childDelegate:
+                                        ListWheelChildBuilderDelegate(
+                                      builder: (context, index) {
+                                        bool isSelected = index + 1 == inches;
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            color: isSelected
+                                                ? GREY1
+                                                : Colors.transparent,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '${index + 1} in',
+                                              style:
+                                                  const TextStyle(fontSize: 16),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      childCount: 12,
+                                    ),
+                                    onSelectedItemChanged: (index) {
+                                      setState(() {
+                                        inches = index + 1;
+                                      });
+                                    },
+                                  ),
+                                )
+                              ],
+                            )
+                          : SizedBox(
+                              height: 200,
+                              width: 80,
+                              // decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
+                              child: ListWheelScrollView.useDelegate(
+                                controller: FixedExtentScrollController(
+                                    initialItem: cm - 1),
+                                itemExtent: 50,
+                                diameterRatio: 5,
+                                childDelegate: ListWheelChildBuilderDelegate(
+                                  builder: (context, index) {
+                                    bool isSelected = index + 1 == cm;
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: isSelected
+                                            ? GREY1
+                                            : Colors.transparent,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          '${index + 1} cm',
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  childCount: 300,
+                                ),
+                                onSelectedItemChanged: (index) {
+                                  setState(() {
+                                    cm = index + 1;
+                                  });
+                                },
+                              ),
+                            ),
+                      const Spacer(),
+                      Column(
+                        children: [
+                          !isMetric
+                              ? SizedBox(
+                                  height: 200,
+                                  width: 80,
+                                  child: ListWheelScrollView.useDelegate(
+                                    controller: FixedExtentScrollController(
+                                        initialItem: weight - 1),
+                                    itemExtent: 50,
+                                    diameterRatio: 5,
+                                    childDelegate:
+                                        ListWheelChildBuilderDelegate(
+                                      builder: (context, index) {
+                                        bool isSelected = (index + 1) == weight;
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            color: isSelected
+                                                ? GREY1
+                                                : Colors.transparent,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '${index + 1} kg',
+                                              style:
+                                                  const TextStyle(fontSize: 16),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      childCount: 200,
+                                    ),
+                                    onSelectedItemChanged: (index) {
+                                      setState(() {
+                                        weight = index + 1;
+                                      });
+                                    },
+                                  ),
+                                )
+                              : SizedBox(
+                                  height: 200,
+                                  width: 80,
+                                  child: ListWheelScrollView.useDelegate(
+                                    controller: FixedExtentScrollController(
+                                        initialItem: weight - 1),
+                                    itemExtent: 50,
+                                    diameterRatio: 5,
+                                    childDelegate:
+                                        ListWheelChildBuilderDelegate(
+                                      builder: (context, index) {
+                                        bool isSelected = (index + 1) == weight;
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            color: isSelected
+                                                ? GREY1
+                                                : Colors.transparent,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '${index + 1} lb',
+                                              style:
+                                                  const TextStyle(fontSize: 16),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      childCount: 200,
+                                    ),
+                                    onSelectedItemChanged: (index) {
+                                      setState(() {
+                                        weight = index + 1;
+                                      });
+                                    },
+                                  ),
+                                )
+                        ],
+                      )
+                    ],
+                  )
+                ],
               ),
             ],
           ),
@@ -742,7 +857,7 @@ class _CustomerDetailsCollectScreenState
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),
               ),
-              minimumSize: Size(size.width * 1, 50),
+              minimumSize: Size(size.width * 1, size.height * 0.08),
             ),
             onPressed: () {
               if (otherApps.isNotEmpty) {
@@ -787,7 +902,7 @@ class _CustomerDetailsCollectScreenState
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),
               ),
-              minimumSize: Size(size.width * 1, 50),
+              minimumSize: Size(size.width * 1, size.height * 0.08),
             ),
             onPressed: () {
               if (workouts.isNotEmpty) {
@@ -845,8 +960,10 @@ class _CustomerDetailsCollectScreenState
                     height: 200,
                     width: 80,
                     child: ListWheelScrollView.useDelegate(
+                      controller:
+                          FixedExtentScrollController(initialItem: day - 1),
                       itemExtent: 50,
-                      diameterRatio: 1.5,
+                      diameterRatio: 5,
                       childDelegate: ListWheelChildBuilderDelegate(
                         builder: (context, index) {
                           bool isSelected = (index + 1) == day;
@@ -879,8 +996,10 @@ class _CustomerDetailsCollectScreenState
                     height: 200,
                     width: 120,
                     child: ListWheelScrollView.useDelegate(
+                      controller:
+                          FixedExtentScrollController(initialItem: month - 1),
                       itemExtent: 50,
-                      diameterRatio: 1.5,
+                      diameterRatio: 5,
                       childDelegate: ListWheelChildBuilderDelegate(
                         builder: (context, index) {
                           bool isSelected = (index + 1) == month;
@@ -913,11 +1032,13 @@ class _CustomerDetailsCollectScreenState
                     height: 200,
                     width: 80,
                     child: ListWheelScrollView.useDelegate(
+                      controller:
+                          FixedExtentScrollController(initialItem: year - 1),
                       itemExtent: 50,
-                      diameterRatio: 1.5,
+                      diameterRatio: 5,
                       childDelegate: ListWheelChildBuilderDelegate(
                         builder: (context, index) {
-                          bool isSelected = (index + 1970) == year;
+                          bool isSelected = (index + 1) == year;
                           return Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10),
@@ -925,7 +1046,7 @@ class _CustomerDetailsCollectScreenState
                             ),
                             child: Center(
                               child: Text(
-                                '${index + 1970}',
+                                '${index + 1960}',
                                 style: const TextStyle(fontSize: 16),
                               ),
                             ),
@@ -935,7 +1056,7 @@ class _CustomerDetailsCollectScreenState
                       ),
                       onSelectedItemChanged: (index) {
                         setState(() {
-                          year = index + 1970;
+                          year = index + 1;
                         });
                       },
                     ),
@@ -953,22 +1074,12 @@ class _CustomerDetailsCollectScreenState
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),
               ),
-              minimumSize: Size(size.width * 1, 50),
+              minimumSize: Size(size.width * 1, size.height * 0.08),
             ),
             onPressed: () {
-              if (month != null) {
-                // Validate that day, month, and year are selected
-                DateTime dob = DateTime(year, month, day);
-                // Use the DOB for whatever logic is needed
-                print("DOB selected: $dob");
-                // Continue with other logic, for example, moving to the next tab
-                if (_tabController.index < _tabController.length - 1) {
-                  _tabController.animateTo(_tabController.index + 1);
-                }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please select a valid date")),
-                );
+              DateTime dob = DateTime(year, month, day);
+              if (_tabController.index < _tabController.length - 1) {
+                _tabController.animateTo(_tabController.index + 1);
               }
             },
             child: const Text("Next Step"),
@@ -1001,7 +1112,7 @@ class _CustomerDetailsCollectScreenState
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  minimumSize: Size(size.width * 1, 70),
+                  minimumSize: Size(size.width * 1, size.height * 0.08),
                 ),
                 onPressed: () {
                   setState(() {
@@ -1024,7 +1135,7 @@ class _CustomerDetailsCollectScreenState
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  minimumSize: Size(size.width * 1, 70),
+                  minimumSize: Size(size.width * 1, size.height * 0.08),
                 ),
                 onPressed: () {
                   setState(() {
@@ -1047,7 +1158,7 @@ class _CustomerDetailsCollectScreenState
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.0),
                     ),
-                    minimumSize: Size(size.width * 1, 70),
+                    minimumSize: Size(size.width * 1, size.height * 0.08),
                   ),
                   onPressed: () {
                     setState(() {
@@ -1069,7 +1180,7 @@ class _CustomerDetailsCollectScreenState
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.0),
                     ),
-                    minimumSize: Size(size.width * 1, 70),
+                    minimumSize: Size(size.width * 1, size.height * 0.08),
                   ),
                   onPressed: () {
                     setState(() {
@@ -1088,22 +1199,18 @@ class _CustomerDetailsCollectScreenState
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               foregroundColor: WHITE,
-              backgroundColor: BLACK,
+              backgroundColor: diet.isNotEmpty ? BLACK : GREY1,
               elevation: 1,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),
               ),
-              minimumSize: Size(size.width * 1, 50),
+              minimumSize: Size(size.width * 1, size.height * 0.08),
             ),
             onPressed: () {
-              if (workouts.isNotEmpty) {
+              if (diet.isNotEmpty) {
                 if (_tabController.index < _tabController.length - 1) {
                   _tabController.animateTo(_tabController.index + 1);
                 }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please select any option")),
-                );
               }
             },
             child: const Text("Next Step"),
@@ -1138,7 +1245,7 @@ class _CustomerDetailsCollectScreenState
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  minimumSize: Size(size.width * 1, 70),
+                  minimumSize: Size(size.width * 1, size.height * 0.08),
                 ),
                 onPressed: () {
                   setState(() {
@@ -1163,7 +1270,7 @@ class _CustomerDetailsCollectScreenState
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  minimumSize: Size(size.width * 1, 70),
+                  minimumSize: Size(size.width * 1, size.height * 0.08),
                 ),
                 onPressed: () {
                   setState(() {
@@ -1192,7 +1299,7 @@ class _CustomerDetailsCollectScreenState
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.0),
                     ),
-                    minimumSize: Size(size.width * 1, 70),
+                    minimumSize: Size(size.width * 1, size.height * 0.08),
                   ),
                   onPressed: () {
                     setState(() {
@@ -1218,7 +1325,7 @@ class _CustomerDetailsCollectScreenState
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.0),
                     ),
-                    minimumSize: Size(size.width * 1, 70),
+                    minimumSize: Size(size.width * 1, size.height * 0.08),
                   ),
                   onPressed: () {
                     setState(() {
@@ -1237,24 +1344,19 @@ class _CustomerDetailsCollectScreenState
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               foregroundColor: WHITE,
-              backgroundColor: BLACK,
+              backgroundColor: accomplish.isNotEmpty ? BLACK : GREY1,
               elevation: 1,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),
               ),
-              minimumSize: Size(size.width * 1, 50),
+              minimumSize: Size(size.width * 1, size.height * 0.08),
             ),
             onPressed: () {
-              if (workouts.isNotEmpty) {
+              if (accomplish.isNotEmpty) {
                 if (_tabController.index < _tabController.length - 1) {
                   _tabController.animateTo(_tabController.index + 1);
-                  print("Need to complete redirect to playstore");
                   StoreRedirect.redirect(androidAppId: "com.farm2bag");
                 }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please select any option")),
-                );
               }
             },
             child: const Text("Next Step"),
@@ -1274,7 +1376,7 @@ class _CustomerDetailsCollectScreenState
         children: [
           const Text(
             "Give us rating",
-            style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold),
           ),
           Container(
             height: size.height * 0.1,
@@ -1290,27 +1392,27 @@ class _CustomerDetailsCollectScreenState
                 children: [
                   Icon(
                     Icons.star,
-                    size: size.height*0.05,
+                    size: size.height * 0.05,
                     color: Colors.amber[300],
                   ),
                   Icon(
                     Icons.star,
-                    size: size.height*0.05,
+                    size: size.height * 0.05,
                     color: Colors.amber[300],
                   ),
                   Icon(
                     Icons.star,
-                    size: size.height*0.05,
+                    size: size.height * 0.05,
                     color: Colors.amber[300],
                   ),
                   Icon(
                     Icons.star,
-                    size: size.height*0.05,
+                    size: size.height * 0.05,
                     color: Colors.amber[300],
                   ),
                   Icon(
                     Icons.star,
-                    size: size.height*0.05,
+                    size: size.height * 0.05,
                     color: Colors.amber[300],
                   )
                 ],
@@ -1364,7 +1466,7 @@ class _CustomerDetailsCollectScreenState
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),
               ),
-              minimumSize: Size(size.width * 1, 50),
+              minimumSize: Size(size.width * 1, size.height * 0.08),
             ),
             onPressed: () {
               if (workouts.isNotEmpty) {
@@ -1422,7 +1524,7 @@ class _CustomerDetailsCollectScreenState
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),
               ),
-              minimumSize: Size(size.width * 1, 50),
+              minimumSize: Size(size.width * 1, size.height * 0.08),
             ),
             onPressed: () {
               if (workouts.isNotEmpty) {
@@ -1450,49 +1552,15 @@ class _CustomerDetailsCollectScreenState
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            height: size.height * 0.1,
-            width: size.width * 0.9,
-            decoration: BoxDecoration(
-                border: Border.all(
-                  color: GREY1,
-                ),
-                borderRadius: BorderRadius.circular(20)),
-            child: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.star,
-                    size: size.height * 0.05,
-                    color: Colors.amber[300],
-                  ),
-                  Icon(
-                    Icons.star,
-                    size: size.height * 0.05,
-                    color: Colors.amber[300],
-                  ),
-                  Icon(
-                    Icons.star,
-                    size: size.height * 0.05,
-                    color: Colors.amber[300],
-                  ),
-                  Icon(
-                    Icons.star,
-                    size: size.height * 0.05,
-                    color: Colors.amber[300],
-                  ),
-                  Icon(
-                    Icons.star,
-                    size: size.height * 0.05,
-                    color: Colors.amber[300],
-                  )
-                ],
-              ),
-            ),
+            clipBehavior: Clip.hardEdge,
+            // height: size.height * 0.3,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+            child: const Center(
+                child: Image(image: AssetImage("assets/images/athelete.webp"))),
           ),
           // const Spacer(),
           const SizedBox(
-            height: 20,
+            height: 25,
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -1501,8 +1569,11 @@ class _CustomerDetailsCollectScreenState
                 "Reach your goals with notifications",
                 style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(
+                height: 20,
+              ),
               Container(
-                height: size.height * 0.3,
+                height: size.height * 0.2,
                 width: size.width * 0.9,
                 decoration: BoxDecoration(
                     color: GREY2,
@@ -1512,15 +1583,60 @@ class _CustomerDetailsCollectScreenState
                     borderRadius: BorderRadius.circular(20)),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text("Hello world"),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    const Text(
+                      "Cal AI would like send you Notification",
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const Spacer(),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      // mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         ElevatedButton(
-                            onPressed: () {}, child: const Text("Don't allow")),
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: BLACK,
+                              backgroundColor: WHITE,
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(0.0),
+                              ),
+                              minimumSize: Size(size.width * 0.44, 50),
+                            ),
+                            onPressed: () {
+                              if (_tabController.index <
+                                  _tabController.length - 1) {
+                                _tabController
+                                    .animateTo(_tabController.index + 1);
+                                _startTimer();
+                              }
+                            },
+                            child: const Text("Don't allow")),
                         ElevatedButton(
-                            onPressed: () {}, child: const Text("Allow"))
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: BLACK,
+                              backgroundColor: WHITE,
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(0.0),
+                              ),
+                              minimumSize: Size(size.width * 0.44, 50),
+                            ),
+                            onPressed: () {
+                              if (_tabController.index <
+                                  _tabController.length - 1) {
+                                _tabController
+                                    .animateTo(_tabController.index + 1);
+                                _startTimer();
+                              }
+                            },
+                            child: const Text("Allow"))
                       ],
                     )
                   ],
@@ -1534,30 +1650,30 @@ class _CustomerDetailsCollectScreenState
             ],
           ),
           const Spacer(),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              foregroundColor: WHITE,
-              backgroundColor: BLACK,
-              elevation: 1,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(50.0),
-              ),
-              minimumSize: Size(size.width * 1, 50),
-            ),
-            onPressed: () {
-              if (workouts.isNotEmpty) {
-                if (_tabController.index < _tabController.length - 1) {
-                  _tabController.animateTo(_tabController.index + 1);
-                  _startTimer();
-                }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please select any option")),
-                );
-              }
-            },
-            child: const Text("Next Step"),
-          ),
+          // ElevatedButton(
+          //   style: ElevatedButton.styleFrom(
+          //     foregroundColor: WHITE,
+          //     backgroundColor: BLACK,
+          //     elevation: 1,
+          //     shape: RoundedRectangleBorder(
+          //       borderRadius: BorderRadius.circular(50.0),
+          //     ),
+          //     minimumSize: Size(size.width * 1, size.height * 0.08),
+          //   ),
+          //   onPressed: () {
+          //     if (workouts.isNotEmpty) {
+          //       if (_tabController.index < _tabController.length - 1) {
+          //         _tabController.animateTo(_tabController.index + 1);
+          //         _startTimer();
+          //       }
+          //     } else {
+          //       ScaffoldMessenger.of(context).showSnackBar(
+          //         const SnackBar(content: Text("Please select any option")),
+          //       );
+          //     }
+          //   },
+          //   child: const Text("Next Step"),
+          // ),
         ],
       ),
     );
@@ -1635,15 +1751,23 @@ class _CustomerDetailsCollectScreenState
                   minimumSize: Size(size.width * 0.5, 70),
                 ),
                 onPressed: () {
-                  if (workouts.isNotEmpty) {
+                  signInWithGoogle().then((onValue) {
                     if (_tabController.index < _tabController.length - 1) {
                       _tabController.animateTo(_tabController.index + 1);
                     }
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Please select any option")),
-                    );
-                  }
+                  }).catchError((onError) {
+                    print(onError);
+                    print("222222222222222222");
+                  });
+                  // if (workouts.isNotEmpty) {
+                  //   if (_tabController.index < _tabController.length - 1) {
+                  //     _tabController.animateTo(_tabController.index + 1);
+                  //   }
+                  // } else {
+                  //   ScaffoldMessenger.of(context).showSnackBar(
+                  //     const SnackBar(content: Text("Please select any option")),
+                  //   );
+                  // }
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1662,12 +1786,12 @@ class _CustomerDetailsCollectScreenState
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   foregroundColor: BLACK,
-                  backgroundColor: Colors.transparent,
+                  backgroundColor: WHITE,
                   elevation: 1,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(50.0),
                   ),
-                  minimumSize: Size(size.width * 0.1, 50),
+                  minimumSize: Size(size.width * 0.2, 50),
                 ),
                 onPressed: () {
                   if (workouts.isNotEmpty) {
@@ -1715,118 +1839,130 @@ class _CustomerDetailsCollectScreenState
             "195lb",
             style: TextStyle(fontSize: 18.0),
           ),
-           Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Container(
-          height: size.height * 0.5,
-          width: size.width * 0.9,
-          decoration: BoxDecoration(
-            // border: Border.all(
-            //   color: Colors.grey, // Use a color directly for GREY1
-            // ),
-            color: GREY2,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Daily Recommendation",
-                  style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  "You can edit this any time",
-                  style: TextStyle(fontSize: 12.0),
-                ),
-                const SizedBox(height: 15), // Add space between the text and grid
-                // Grid View with cards
-                Expanded(
-                  child: GridView.count(
-                    shrinkWrap: true,
-                    physics: const BouncingScrollPhysics(),
-                    crossAxisCount: 2, // 2 columns in the grid
-                    mainAxisSpacing: 10, // Vertical spacing between cards
-                    crossAxisSpacing: 10, // Horizontal spacing between cards
-                    childAspectRatio: 1, // Aspect ratio of each card (width/height)
-                    children: List.generate(
-                      4,
-                      (index) {
-                        return Card(
-                          elevation: 5,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Stack(
-                              alignment: Alignment.center, // Center items inside Stack
-                              children: [
-                                // Circular Progress Bar
-                                Positioned.fill(
-                                  child: Center(
-                                    child: SizedBox(
-                                      height: 60,
-                                      width: 60,
-                                      child: CircularProgressIndicator(
-                                        value: 0.7, // Progress value
-                                        strokeWidth: 5, // Thicker stroke
-                                        backgroundColor: Colors.grey.shade300, // Background color
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          _getProgressColor(index), // Dynamic color
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              height: size.height * 0.5,
+              width: size.width * 0.9,
+              decoration: BoxDecoration(
+                color: GREY2,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Daily Recommendation",
+                      style: TextStyle(
+                          fontSize: 16.0, fontWeight: FontWeight.bold),
+                    ),
+                    const Text(
+                      "You can edit this any time",
+                      style: TextStyle(fontSize: 12.0),
+                    ),
+                    const SizedBox(
+                        height: 15), // Add space between the text and grid
+                    // Grid View with cards
+                    Expanded(
+                      child: GridView.count(
+                        shrinkWrap: true,
+                        physics: const BouncingScrollPhysics(),
+                        crossAxisCount: 2, // 2 columns in the grid
+                        mainAxisSpacing: 10, // Vertical spacing between cards
+                        crossAxisSpacing:
+                            10, // Horizontal spacing between cards
+                        childAspectRatio:
+                            1, // Aspect ratio of each card (width/height)
+                        children: List.generate(
+                          4,
+                          (index) {
+                            return Card(
+                              elevation: 5,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Center(
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            SizedBox(
+                                              height: 80,
+                                              width: 80,
+                                              child: CircularProgressIndicator(
+                                                value: 0.7,
+                                                strokeWidth: 4,
+                                                backgroundColor:
+                                                    Colors.grey.shade300,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                        Color>(
+                                                  _getProgressColor(index),
+                                                ),
+                                              ),
+                                            ),
+                                            const Text(
+                                              '1100',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ),
-                                // Text above CircularProgressIndicator
-                                Positioned(
-                                  top: 5,
-                                  child: Text(
-                                    values[index], // Display values from list
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                // Centered Text (e.g., "1100")
-                                const Positioned(
-                                  top: 40, // Adjust positioning
-                                  child: Text(
-                                    "1100", // Placeholder value
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                // Positioned Editable Icon (Edit icon at bottom right)
-                                Positioned(
-                                  bottom: 1,
-                                  right: 1,
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.edit,
-                                      color: Colors.black,
-                                      size: 24,
+                                    Positioned(
+                                      top: 5,
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            0.0, 0.0, 0.0, 1),
+                                        child: Text(
+                                          values[index],
+                                          style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
                                     ),
-                                    onPressed: () {
-                                      // Action on Edit Icon click
-                                      print('Edit button clicked on Card $index');
-                                    },
-                                  ),
+                                    Positioned(
+                                      bottom: 1,
+                                      right: 1,
+                                      child: IconButton(
+                                        icon: const Icon(
+                                          Icons.edit,
+                                          color: Colors.black,
+                                          size: 24,
+                                        ),
+                                        onPressed: () {
+                                          print(
+                                              'Edit button clicked on Card $index');
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-          // const Spacer(),
           const SizedBox(
             height: 20,
           ),
@@ -1842,16 +1978,17 @@ class _CustomerDetailsCollectScreenState
               minimumSize: Size(size.width * 1, 50),
             ),
             onPressed: () {
-              if (workouts.isNotEmpty) {
-                if (_tabController.index < _tabController.length - 1) {
-                  _tabController.animateTo(_tabController.index + 1);
-                  _startTimer();
-                }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please select any option")),
-                );
-              }
+              // if (workouts.isNotEmpty) {
+              //   if (_tabController.index < _tabController.length - 1) {
+                  Navigator.of(context).pushReplacement(MaterialPageRoute(
+                      builder: (BuildContext context) =>
+                          const DashboardScreen()));
+              //   }
+              // } else {
+              //   ScaffoldMessenger.of(context).showSnackBar(
+              //     const SnackBar(content: Text("Please select any option")),
+              //   );
+              // }
             },
             child: const Text("Next Step"),
           ),
@@ -1893,19 +2030,17 @@ class _CustomerDetailsCollectScreenState
   }
 }
 
-
-
 Color _getProgressColor(int index) {
-    switch (index) {
-      case 0:
-        return Colors.blue; // Blue color for first card
-      case 1:
-        return Colors.green; // Green color for second card
-      case 2:
-        return Colors.orange; // Orange color for third card
-      case 3:
-        return Colors.red; // Red color for fourth card
-      default:
-        return Colors.blue;
-    }
+  switch (index) {
+    case 0:
+      return Colors.blue;
+    case 1:
+      return Colors.green;
+    case 2:
+      return Colors.orange;
+    case 3:
+      return Colors.red;
+    default:
+      return Colors.blue;
   }
+}

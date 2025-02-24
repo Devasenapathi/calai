@@ -10,8 +10,8 @@ class HeightSelectorScreen extends StatefulWidget {
 }
 
 class _HeightSelectorScreenState extends State<HeightSelectorScreen> {
-  int feet = 5;  // Default feet value
-  int inches = 0;  // Default inches value
+  int feet = 5;
+  int inches = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,6 @@ class _HeightSelectorScreenState extends State<HeightSelectorScreen> {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            // Feet Selector
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -38,7 +37,6 @@ class _HeightSelectorScreenState extends State<HeightSelectorScreen> {
                 SizedBox(
                   height: 100,
                   width: 80,
-                  // decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
                   child: ListWheelScrollView.useDelegate(
                     itemExtent: 50,
                     diameterRatio: 1.5,
@@ -227,7 +225,7 @@ class ProgressCardGrid extends StatelessWidget {
 }
 
 void main() {
-  runApp(MaterialApp(
+  runApp(const MaterialApp(
     home: ProgressCardGrid(),
   ));
 }
@@ -361,6 +359,8 @@ class _DateScrollerState extends State<DateScroller> {
 
 
 class WeightGraphScreen extends StatefulWidget {
+  const WeightGraphScreen({super.key});
+
   @override
   _WeightGraphScreenState createState() => _WeightGraphScreenState();
 }
@@ -425,8 +425,8 @@ class _WeightGraphScreenState extends State<WeightGraphScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Weight Progress Graph")),
-      body: Container(
+      appBar: AppBar(title: const Text("Weight Progress Graph")),
+      body: SizedBox(
         height: MediaQuery.of(context).size.height*0.3,
         width: MediaQuery.of(context).size.width*0.9,
         child: Column(
@@ -435,12 +435,12 @@ class _WeightGraphScreenState extends State<WeightGraphScreen> {
             Expanded(
               child: LineChart(
                 LineChartData(
-                  gridData: FlGridData(show: true),
+                  gridData: const FlGridData(show: true),
                   titlesData: FlTitlesData(
-                    topTitles: AxisTitles(
+                    topTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false)
                     ),
-                    rightTitles: AxisTitles(
+                    rightTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
                     ),
                     bottomTitles: AxisTitles(
@@ -465,7 +465,7 @@ class _WeightGraphScreenState extends State<WeightGraphScreen> {
                           if (value.toInt() < months.length) {
                             return Text(months[value.toInt()]);
                           }
-                          return Text('');
+                          return const Text('');
                         },
                       ),
                     ),
@@ -482,40 +482,40 @@ class _WeightGraphScreenState extends State<WeightGraphScreen> {
                 ),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             // Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
                   onPressed: () => _updateDataPoints("90 Days"),
-                  child: Text("90 Days"),
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(
+                    backgroundColor: WidgetStateProperty.all(
                         _selectedPeriod == "90 Days"
                             ? Colors.blue
                             : Colors.grey),
                   ),
+                  child: const Text("90 Days"),
                 ),
                 ElevatedButton(
                   onPressed: () => _updateDataPoints("6 Months"),
-                  child: Text("6 Months"),
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(
+                    backgroundColor: WidgetStateProperty.all(
                         _selectedPeriod == "6 Months"
                             ? Colors.blue
                             : Colors.grey),
                   ),
+                  child: const Text("6 Months"),
                 ),
                 ElevatedButton(
                   onPressed: () => _updateDataPoints("1 Year"),
-                  child: Text("1 Year"),
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(
+                    backgroundColor: WidgetStateProperty.all(
                         _selectedPeriod == "1 Year"
                             ? Colors.blue
                             : Colors.grey),
                   ),
+                  child: const Text("1 Year"),
                 ),
               ],
             ),

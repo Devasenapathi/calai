@@ -1,4 +1,3 @@
-import 'package:calai/utils/Color_resources.dart';
 import 'package:flutter/material.dart';
 
 class StreakScreen extends StatefulWidget {
@@ -36,7 +35,7 @@ class _StreakScreenState extends State<StreakScreen> {
       shadowColor: Colors.grey.shade300,
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 0),
-      child: Container(
+      child: SizedBox(
         height: size.height * 0.49,
         width: size.width * 0.9,
         child: Padding(
