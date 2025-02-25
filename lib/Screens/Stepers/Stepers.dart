@@ -9,98 +9,152 @@ class StepersScreen extends StatefulWidget {
   State<StepersScreen> createState() => _StepersScreenState();
 }
 
-class _StepersScreenState extends State<StepersScreen> with SingleTickerProviderStateMixin {
+class _StepersScreenState extends State<StepersScreen> {
+  final PageController _pageController = PageController();
+  int _currentIndex = 0;
 
-  late TabController _tabController;
+  final List<Map<String, String>> _steps = [
+    {
+      'title': 'Step 1',
+      'description': 'Welcome to the app! This is the first step.',
+      'image': 'assets/images/calai2.webp'
+    },
+    {
+      'title': 'Step 2',
+      'description': 'Now you will learn how to navigate through the app.',
+      'image': 'assets/images/calai3.webp'
+    },
+    {
+      'title': 'Step 3',
+      'description': 'Finally, explore advanced features of the app.',
+      'image': 'assets/images/athelete.webp'
+    },
+  ];
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _goToNextTab() {
-    if (_tabController.index < 2) {
-      _tabController.animateTo(_tabController.index + 1);
-    }else{
-        Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (BuildContext context) => const CustomerDetailsCollectScreen()));
+  void _goToNextPage() {
+    if (_currentIndex < _steps.length - 1) {
+      _pageController.nextPage(
+          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    } else {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (BuildContext context) =>
+              const CustomerDetailsCollectScreen()));
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: BLACK,
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildTutorialPanel('Step 1', 'Welcome to the app! This is the first step.'),
-          _buildTutorialPanel('Step 2', 'Now you will learn how to navigate through the app.'),
-          _buildTutorialPanel('Step 3', 'Finally, explore advanced features of the app.'),
-        ],
+  Widget _buildDots() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(
+        _steps.length,
+        (index) => Container(
+          margin: const EdgeInsets.symmetric(horizontal: 5),
+          width: _currentIndex == index ? 12 : 8,
+          height: _currentIndex == index ? 12 : 8,
+          decoration: BoxDecoration(
+            color: _currentIndex == index ? Colors.black : Colors.grey,
+            shape: BoxShape.circle,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildTutorialPanel(String title, String description) {
+  @override
+  Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
-    return Column(
-      children: [
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.5,
-          child: Center( 
-            child: Text(
-              title,
-              style: const TextStyle(color: WHITE, fontSize: 24),
-            ),
-          ),
-        ),
-        Expanded(
-          child: Container(
-            width: size.width*1,
-            decoration: const BoxDecoration(
-              color: WHITE,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(40),
-                topRight: Radius.circular(40),
+
+    return Scaffold(
+      backgroundColor: BLACK,
+      body: Stack(
+        children: [
+          // Increased Image Height
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SizedBox(
+              height: size.height * 0.55, // Increased height
+              child: Image.asset(
+                _steps[_currentIndex]['image']!,
+                width: size.width,
+                fit: BoxFit.cover,
               ),
             ),
-            child: Padding(
+          ),
+
+          // Overlapping Card
+          Positioned(
+            top: size.height * 0.45, // Overlaps with the image
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: size.width,
               padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: WHITE,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(40),
+                  topRight: Radius.circular(40),
+                ),
+              ),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),),
+                  // Swipeable Content inside the card
+                  SizedBox(
+                    height: size.height * 0.25, // Adjust content height
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: _steps.length,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentIndex = index;
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Text(
+                              _steps[index]['title']!,
+                              style: const TextStyle(
+                                  fontSize: 24, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(_steps[index]['description']!),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  Spacer(),
+
+                  // Custom Dots Indicator
+                  _buildDots(),
+
                   const SizedBox(height: 20),
-                  Text(description),
-                  const Spacer(),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: WHITE, backgroundColor: BLACK,
+                      foregroundColor: WHITE,
+                      backgroundColor: BLACK,
                       shadowColor: GREY,
                       elevation: 5,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(50.0)),
                       minimumSize: Size(size.width * 1, 50),
                     ),
-                    onPressed: () {
-                      _goToNextTab();
-                    },
-                    child: const Text('Next'),
+                    onPressed: _goToNextPage,
+                    child: Text(
+                        _currentIndex < _steps.length - 1 ? 'Next' : 'Finish'),
                   ),
                 ],
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

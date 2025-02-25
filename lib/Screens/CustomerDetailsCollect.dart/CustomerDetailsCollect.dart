@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:calai/Screens/Dashboard/Dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import 'package:calai/utils/Color_resources.dart';
@@ -33,6 +34,10 @@ class _CustomerDetailsCollectScreenState
   String diet = "";
   String accomplish = "";
   String? token = "";
+  String selectedGoal = "";
+  String chooseWeight = "";
+  late double minWeight;
+  late double maxWeight;
 
   List<String> texts = [
     "Customizing health plan...",
@@ -46,7 +51,7 @@ class _CustomerDetailsCollectScreenState
   int feet = 5;
   int inches = 5;
   int cm = 100;
-  int weight = 50;
+  int weight = 120;
   String height = "";
 
   int day = 10;
@@ -62,7 +67,7 @@ class _CustomerDetailsCollectScreenState
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 14, vsync: this);
+    _tabController = TabController(length: 15, vsync: this);
     _tabController.addListener(_updateProgress);
   }
 
@@ -126,6 +131,7 @@ class _CustomerDetailsCollectScreenState
       print("Error during Google Sign-In: $e");
       return null;
     }
+    return null;
   }
 
   @override
@@ -217,9 +223,12 @@ class _CustomerDetailsCollectScreenState
                 _buildGenderTab(),
                 _buildWorkoutTab(),
                 _buildOtherappTab(),
-                _buildHeightWeightTab(),
                 _buildGraphTab(),
+                _buildHeightWeightTab(),
                 _buildDOBTab(),
+                _buildgoal(),
+                _buildChooseWeight(),
+                _buildWeightLosingorGaining(),
                 _buildDietTab(),
                 _buildAccomplishTab(),
                 _buildRatingTab(),
@@ -246,7 +255,7 @@ class _CustomerDetailsCollectScreenState
         children: [
           const Text(
             "Choose Your Gender",
-            style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 33.0, fontWeight: FontWeight.bold),
           ),
           const Text("This will be used to callibrate your custom plan"),
           const Spacer(),
@@ -342,130 +351,97 @@ class _CustomerDetailsCollectScreenState
   Widget _buildWorkoutTab() {
     Size size = MediaQuery.of(context).size;
     return Padding(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 30),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "How many workouts do you do per week",
-            style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+            "How many workouts do you do per week?",
+            style: TextStyle(fontSize: 30.0, fontWeight: FontWeight.bold),
           ),
-          const Text("This will be used to callibrate your custom plan"),
-          const Spacer(),
+          const SizedBox(height: 8),
+          const Text(
+            "This will be used to calibrate your custom plan.",
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          const SizedBox(height: 30),
           Column(
             children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: workouts == "0-2" ? WHITE : BLACK,
-                  backgroundColor: workouts == "0-2" ? BLACK : GREY2,
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  minimumSize: Size(size.width * 1, size.height * 0.08),
-                ),
-                onPressed: () {
-                  setState(() {
-                    workouts = "0-2";
-                  });
-                },
-                child: const Row(
-                  children: [
-                    Icon(Icons.center_focus_strong),
-                    SizedBox(
-                      width: 20,
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [Text("0-2"), Text("Workouts now and then")],
-                    )
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: workouts == "3-5" ? WHITE : BLACK,
-                  backgroundColor: workouts == "3-5" ? BLACK : GREY2,
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  minimumSize: Size(size.width * 1, size.height * 0.08),
-                ),
-                onPressed: () {
-                  setState(() {
-                    workouts = "3-5";
-                  });
-                },
-                child: const Row(
-                  children: [
-                    Icon(Icons.fitness_center),
-                    SizedBox(
-                      width: 20,
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("3-5"),
-                        Text("A few workouts for a week")
-                      ],
-                    )
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: workouts == "6+" ? WHITE : BLACK,
-                  backgroundColor: workouts == "6+" ? BLACK : GREY2,
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  minimumSize: Size(size.width * 1, size.height * 0.08),
-                ),
-                onPressed: () {
-                  setState(() {
-                    workouts = "6+";
-                  });
-                },
-                child: const Row(
-                  children: [
-                    Icon(Icons.run_circle_outlined),
-                    SizedBox(
-                      width: 20,
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [Text("6+"), Text("Dedicated Athlete")],
-                    )
-                  ],
-                ),
-              ),
+              _buildWorkoutOption(
+                  "0-2", "Workouts now and then", Icons.circle_outlined),
+              const SizedBox(height: 12),
+              _buildWorkoutOption(
+                  "3-5", "A few workouts per week", Icons.more_horiz),
+              const SizedBox(height: 12),
+              _buildWorkoutOption(
+                  "6+", "Dedicated athlete", Icons.sports_gymnastics),
             ],
           ),
           const Spacer(),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              foregroundColor: WHITE,
-              backgroundColor: workouts.isNotEmpty ? BLACK : GREY1,
+              foregroundColor: Colors.white,
+              backgroundColor:
+                  workouts.isNotEmpty ? Colors.black : Colors.grey[300],
               elevation: 1,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(50.0),
+                borderRadius: BorderRadius.circular(30.0),
               ),
-              minimumSize: Size(size.width * 1, size.height * 0.08),
+              minimumSize: Size(size.width * 1, size.height * 0.07),
             ),
-            onPressed: () {
-              if (workouts.isNotEmpty) {
-                if (_tabController.index < _tabController.length - 1) {
-                  _tabController.animateTo(_tabController.index + 1);
-                }
-              }
-            },
-            child: const Text("Next Step"),
+            onPressed: workouts.isNotEmpty
+                ? () {
+                    if (_tabController.index < _tabController.length - 1) {
+                      _tabController.animateTo(_tabController.index + 1);
+                    }
+                  }
+                : null,
+            child: const Text("Next", style: TextStyle(fontSize: 18)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWorkoutOption(String value, String subtitle, IconData icon) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          workouts = value;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(
+          color: workouts == value ? Colors.black : Colors.grey[200],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: workouts == value ? Colors.white : Colors.black),
+            const SizedBox(width: 15),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: workouts == value ? Colors.white : Colors.black,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: workouts == value ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -479,62 +455,14 @@ class _CustomerDetailsCollectScreenState
         children: [
           const Text(
             "Have you tried other calorie tracking apps?",
-            style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 34.0, fontWeight: FontWeight.bold),
           ),
           const Spacer(),
           Column(
             children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: otherApps == "Yes" ? WHITE : BLACK,
-                  backgroundColor: otherApps == "Yes" ? BLACK : GREY2,
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  minimumSize: Size(size.width * 1, size.height * 0.08),
-                ),
-                onPressed: () {
-                  setState(() {
-                    otherApps = "Yes";
-                  });
-                },
-                child: const Row(
-                  children: [
-                    Icon(Icons.thumb_up),
-                    SizedBox(
-                      width: 20,
-                    ),
-                    Text("YES")
-                  ],
-                ),
-              ),
+              _buildOptionButton("Yes", Icons.thumb_up, size),
               const SizedBox(height: 10),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: otherApps == "No" ? WHITE : BLACK,
-                  backgroundColor: otherApps == "No" ? BLACK : GREY2,
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  minimumSize: Size(size.width * 1, size.height * 0.08),
-                ),
-                onPressed: () {
-                  setState(() {
-                    otherApps = "No";
-                  });
-                },
-                child: const Row(
-                  children: [
-                    Icon(Icons.thumb_down),
-                    SizedBox(
-                      width: 20,
-                    ),
-                    Text("NO")
-                  ],
-                ),
-              ),
+              _buildOptionButton("No", Icons.thumb_down, size),
             ],
           ),
           const Spacer(),
@@ -562,8 +490,43 @@ class _CustomerDetailsCollectScreenState
     );
   }
 
+  Widget _buildOptionButton(String value, IconData icon, Size size) {
+    bool isSelected = otherApps == value;
+
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: isSelected ? Colors.white : Colors.black,
+        backgroundColor: isSelected ? Colors.black : Colors.transparent,
+        side: BorderSide(
+          color: isSelected ? Colors.black : Colors.grey,
+          width: 2.0,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        minimumSize: Size(size.width * 1, size.height * 0.08),
+      ),
+      onPressed: () {
+        setState(() {
+          otherApps = value;
+        });
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: isSelected ? Colors.white : Colors.black),
+          const SizedBox(width: 20),
+          Text(value.toUpperCase(),
+              style:
+                  TextStyle(color: isSelected ? Colors.white : Colors.black)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeightWeightTab() {
     Size size = MediaQuery.of(context).size;
+
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -571,288 +534,81 @@ class _CustomerDetailsCollectScreenState
         children: [
           const Text(
             "Height & Weight",
-            style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 34.0, fontWeight: FontWeight.bold),
           ),
-          const Text("This will be used to callibrate your custom plan"),
+          const Text("This will be used to calibrate your custom plan"),
           const Spacer(),
-          Column(
+
+          // Unit Switch (Metric ↔ Imperial)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                width: size.width * 1,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Column(
-                        children: [
-                          Text(
-                            "Imperial",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                            "Height",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          )
-                        ],
-                      ),
-                      const Spacer(),
-                      Switch(
-                        activeColor: BLACK,
-                        value: isMetric,
-                        onChanged: (bool newValue) {
-                          setState(() {
-                            isMetric = newValue;
-                          });
-                        },
-                      ),
-                      const Spacer(),
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Metrics",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                            "Weight",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          )
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+              const Text("Imperial", style: TextStyle(fontSize: 20.0)),
+              Switch(
+                activeColor: Colors.black,
+                value: isMetric,
+                onChanged: (bool newValue) {
+                  setState(() {
+                    isMetric = newValue;
+
+                    if (isMetric) {
+                      // Convert lbs to kg and feet/inches to cm
+                      weight = (weight * 0.453592).round();
+                      cm = ((feet * 30.48) + (inches * 2.54)).round();
+                    } else {
+                      // Convert kg to lbs and cm to feet/inches
+                      weight = (weight * 2.20462).round();
+                      double totalCm = cm.toDouble();
+                      feet = (totalCm / 30.48).floor();
+                      inches = ((totalCm / 2.54) % 12).round();
+                    }
+                  });
+                },
               ),
-              const SizedBox(
-                height: 20,
-              ),
+              const Text("Metric", style: TextStyle(fontSize: 20.0)),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Height & Weight Pickers
+          Row(
+            children: [
+              // Height Picker
               Column(
                 children: [
-                  Row(
-                    children: [
-                      isMetric
-                          ? Row(
-                              children: [
-                                SizedBox(
-                                  height: 200,
-                                  width: 80,
-                                  child: ListWheelScrollView.useDelegate(
-                                    controller: FixedExtentScrollController(
-                                        initialItem: feet - 3),
-                                    itemExtent: 50,
-                                    diameterRatio: 5,
-                                    childDelegate:
-                                        ListWheelChildBuilderDelegate(
-                                      builder: (context, index) {
-                                        bool isSelected = (index + 3) == feet;
-                                        return Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            color: isSelected
-                                                ? GREY1
-                                                : Colors.transparent,
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              '${index + 3} ft',
-                                              style:
-                                                  const TextStyle(fontSize: 16),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      childCount: 8,
-                                    ),
-                                    onSelectedItemChanged: (index) {
-                                      setState(() {
-                                        feet = index + 3;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(
-                                  width: 10,
-                                ),
-                                SizedBox(
-                                  height: 200,
-                                  width: 80,
-                                  // decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-                                  child: ListWheelScrollView.useDelegate(
-                                    controller: FixedExtentScrollController(
-                                        initialItem: inches - 1),
-                                    itemExtent: 50,
-                                    diameterRatio: 5,
-                                    childDelegate:
-                                        ListWheelChildBuilderDelegate(
-                                      builder: (context, index) {
-                                        bool isSelected = index + 1 == inches;
-                                        return Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            color: isSelected
-                                                ? GREY1
-                                                : Colors.transparent,
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              '${index + 1} in',
-                                              style:
-                                                  const TextStyle(fontSize: 16),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      childCount: 12,
-                                    ),
-                                    onSelectedItemChanged: (index) {
-                                      setState(() {
-                                        inches = index + 1;
-                                      });
-                                    },
-                                  ),
-                                )
-                              ],
-                            )
-                          : SizedBox(
-                              height: 200,
-                              width: 80,
-                              // decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-                              child: ListWheelScrollView.useDelegate(
-                                controller: FixedExtentScrollController(
-                                    initialItem: cm - 1),
-                                itemExtent: 50,
-                                diameterRatio: 5,
-                                childDelegate: ListWheelChildBuilderDelegate(
-                                  builder: (context, index) {
-                                    bool isSelected = index + 1 == cm;
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        color: isSelected
-                                            ? GREY1
-                                            : Colors.transparent,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          '${index + 1} cm',
-                                          style: const TextStyle(fontSize: 16),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  childCount: 300,
-                                ),
-                                onSelectedItemChanged: (index) {
-                                  setState(() {
-                                    cm = index + 1;
-                                  });
-                                },
-                              ),
-                            ),
-                      const Spacer(),
-                      Column(
-                        children: [
-                          !isMetric
-                              ? SizedBox(
-                                  height: 200,
-                                  width: 80,
-                                  child: ListWheelScrollView.useDelegate(
-                                    controller: FixedExtentScrollController(
-                                        initialItem: weight - 1),
-                                    itemExtent: 50,
-                                    diameterRatio: 5,
-                                    childDelegate:
-                                        ListWheelChildBuilderDelegate(
-                                      builder: (context, index) {
-                                        bool isSelected = (index + 1) == weight;
-                                        return Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            color: isSelected
-                                                ? GREY1
-                                                : Colors.transparent,
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              '${index + 1} kg',
-                                              style:
-                                                  const TextStyle(fontSize: 16),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      childCount: 200,
-                                    ),
-                                    onSelectedItemChanged: (index) {
-                                      setState(() {
-                                        weight = index + 1;
-                                      });
-                                    },
-                                  ),
-                                )
-                              : SizedBox(
-                                  height: 200,
-                                  width: 80,
-                                  child: ListWheelScrollView.useDelegate(
-                                    controller: FixedExtentScrollController(
-                                        initialItem: weight - 1),
-                                    itemExtent: 50,
-                                    diameterRatio: 5,
-                                    childDelegate:
-                                        ListWheelChildBuilderDelegate(
-                                      builder: (context, index) {
-                                        bool isSelected = (index + 1) == weight;
-                                        return Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                            color: isSelected
-                                                ? GREY1
-                                                : Colors.transparent,
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              '${index + 1} lb',
-                                              style:
-                                                  const TextStyle(fontSize: 16),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      childCount: 200,
-                                    ),
-                                    onSelectedItemChanged: (index) {
-                                      setState(() {
-                                        weight = index + 1;
-                                      });
-                                    },
-                                  ),
-                                )
-                        ],
-                      )
-                    ],
-                  )
+                  Text("Height",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 10),
+                  isMetric
+                      ? _buildHeightPickerMetric()
+                      : _buildHeightPickerImperial(),
+                ],
+              ),
+              const Spacer(),
+              // Weight Picker
+              Column(
+                children: [
+                  Text("Weight",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 10),
+                  isMetric
+                      ? _buildWeightPickerMetric()
+                      : _buildWeightPickerImperial(),
                 ],
               ),
             ],
           ),
+
           const Spacer(),
+
+          // Next Step Button
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              foregroundColor: WHITE,
-              backgroundColor: BLACK,
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.black,
               elevation: 1,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),
@@ -860,14 +616,8 @@ class _CustomerDetailsCollectScreenState
               minimumSize: Size(size.width * 1, size.height * 0.08),
             ),
             onPressed: () {
-              if (otherApps.isNotEmpty) {
-                if (_tabController.index < _tabController.length - 1) {
-                  _tabController.animateTo(_tabController.index + 1);
-                }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Please select any one")),
-                );
+              if (_tabController.index < _tabController.length - 1) {
+                _tabController.animateTo(_tabController.index + 1);
               }
             },
             child: const Text("Next Step"),
@@ -877,23 +627,329 @@ class _CustomerDetailsCollectScreenState
     );
   }
 
+// Metric Height Picker (cm)
+  Widget _buildHeightPickerMetric() {
+    return SizedBox(
+      height: 200,
+      width: 80,
+      child: ListWheelScrollView.useDelegate(
+        controller: FixedExtentScrollController(initialItem: cm - 100),
+        itemExtent: 50,
+        diameterRatio: 5,
+        childDelegate: ListWheelChildBuilderDelegate(
+          builder: (context, index) {
+            bool isSelected = (index + 100) == cm; // Check if selected
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: isSelected ? GREY1 : Colors.transparent, // Highlight
+              ),
+              child: Center(
+                child: Text(
+                  "${index + 100} cm",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? Colors.black : Colors.grey,
+                  ),
+                ),
+              ),
+            );
+          },
+          childCount: 120,
+        ),
+        onSelectedItemChanged: (index) {
+          setState(() {
+            cm = index + 100;
+          });
+        },
+      ),
+    );
+  }
+
+// Imperial Height Picker (Feet & Inches)
+  Widget _buildHeightPickerImperial() {
+    return Row(
+      children: [
+        // Feet
+        SizedBox(
+          height: 200,
+          width: 80,
+          child: ListWheelScrollView.useDelegate(
+            controller: FixedExtentScrollController(initialItem: feet - 3),
+            itemExtent: 50,
+            diameterRatio: 5,
+            childDelegate: ListWheelChildBuilderDelegate(
+              builder: (context, index) {
+                bool isSelected = (index + 3) == feet; // Check if selected
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: isSelected ? GREY1 : Colors.transparent, // Highlight
+                  ),
+                  child: Center(
+                    child: Text(
+                      "${index + 3} ft",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? Colors.black : Colors.grey,
+                      ),
+                    ),
+                  ),
+                );
+              },
+              childCount: 8,
+            ),
+            onSelectedItemChanged: (index) {
+              setState(() {
+                feet = index + 3;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 10),
+        // Inches
+        SizedBox(
+          height: 200,
+          width: 80,
+          child: ListWheelScrollView.useDelegate(
+            controller: FixedExtentScrollController(initialItem: inches),
+            itemExtent: 50,
+            diameterRatio: 5,
+            childDelegate: ListWheelChildBuilderDelegate(
+              builder: (context, index) {
+                bool isSelected = index == inches; // Check if selected
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: isSelected ? GREY1 : Colors.transparent, // Highlight
+                  ),
+                  child: Center(
+                    child: Text(
+                      "$index in",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? Colors.black : Colors.grey,
+                      ),
+                    ),
+                  ),
+                );
+              },
+              childCount: 12,
+            ),
+            onSelectedItemChanged: (index) {
+              setState(() {
+                inches = index;
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+// Metric Weight Picker (kg)
+  Widget _buildWeightPickerMetric() {
+    return SizedBox(
+      height: 200,
+      width: 80,
+      child: ListWheelScrollView.useDelegate(
+        controller: FixedExtentScrollController(initialItem: weight - 40),
+        itemExtent: 50,
+        diameterRatio: 5,
+        childDelegate: ListWheelChildBuilderDelegate(
+          builder: (context, index) {
+            bool isSelected = (index + 40) == weight; // Check if selected
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: isSelected ? GREY1 : Colors.transparent, // Highlight
+              ),
+              child: Center(
+                child: Text(
+                  "${index + 40} kg",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? Colors.black : Colors.grey,
+                  ),
+                ),
+              ),
+            );
+          },
+          childCount: 110,
+        ),
+        onSelectedItemChanged: (index) {
+          setState(() {
+            weight = index + 40;
+          });
+        },
+      ),
+    );
+  }
+
+// Imperial Weight Picker (lbs)
+  Widget _buildWeightPickerImperial() {
+    return SizedBox(
+      height: 200,
+      width: 80,
+      child: ListWheelScrollView.useDelegate(
+        controller: FixedExtentScrollController(initialItem: weight - 90),
+        itemExtent: 50,
+        diameterRatio: 5,
+        childDelegate: ListWheelChildBuilderDelegate(
+          builder: (context, index) {
+            bool isSelected = (index + 90) == weight; // Check if selected
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: isSelected ? GREY1 : Colors.transparent, // Highlight
+              ),
+              child: Center(
+                child: Text(
+                  "${index + 90} lb",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? Colors.black : Colors.grey,
+                  ),
+                ),
+              ),
+            );
+          },
+          childCount: 240,
+        ),
+        onSelectedItemChanged: (index) {
+          setState(() {
+            weight = index + 90;
+          });
+        },
+      ),
+    );
+  }
+
   Widget _buildGraphTab() {
     Size size = MediaQuery.of(context).size;
     return Padding(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 30.0),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 20),
+
+          // Title
           const Text(
-            "Cal AI creates a long term results",
-            style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+            "Cal AI creates \nlong-term results",
+            style: TextStyle(fontSize: 28.0, fontWeight: FontWeight.bold),
           ),
-          const Text("This will be used to callibrate your custom plan"),
-          const Spacer(),
-          const Column(
-            children: [],
+          const SizedBox(height: 10),
+
+          // Subtitle
+          const Text(
+            "This will be used to calibrate your custom plan",
+            style: TextStyle(fontSize: 16.0, color: Colors.grey),
           ),
-          const Spacer(),
+          const SizedBox(height: 20),
+
+          // "Your Weight" Title
+          const Align(
+            alignment: Alignment.center,
+            child: Text(
+              "Your weight",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+
+          // **Graph Section - Full Width**
+          SizedBox(
+            height: 200,
+            width: double.infinity,
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(show: false), // Remove grid lines
+                titlesData: FlTitlesData(
+                  leftTitles:
+                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles:
+                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles:
+                      AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        switch (value.toInt()) {
+                          case 0:
+                            return const Text('1M',
+                                style: TextStyle(fontSize: 12));
+                          case 3:
+                            return const Text('3M',
+                                style: TextStyle(fontSize: 12));
+                          case 6:
+                            return const Text('6M',
+                                style: TextStyle(fontSize: 12));
+                          default:
+                            return const Text('');
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                lineBarsData: [
+                  // **Black Line - Cal AI**
+                  LineChartBarData(
+                    spots: [
+                      const FlSpot(0, 3.5),
+                      const FlSpot(1, 3.2),
+                      const FlSpot(2, 2.8),
+                      const FlSpot(3, 2.5),
+                      const FlSpot(4, 2.3),
+                      const FlSpot(5, 2.0),
+                      const FlSpot(6, 1.8),
+                    ],
+                    isCurved: true,
+                    color: Colors.black,
+                    barWidth: 4,
+                    belowBarData: BarAreaData(show: false),
+                    dotData: FlDotData(show: false),
+                  ),
+
+                  // **Red Line - Traditional Diet**
+                  LineChartBarData(
+                    spots: [
+                      const FlSpot(0, 3.5),
+                      const FlSpot(1, 3.4),
+                      const FlSpot(2, 3.3),
+                      const FlSpot(3, 3.5),
+                      const FlSpot(4, 3.8),
+                      const FlSpot(5, 4.0),
+                      const FlSpot(6, 4.2),
+                    ],
+                    isCurved: true,
+                    color: Colors.red,
+                    barWidth: 4,
+                    belowBarData: BarAreaData(show: false),
+                    dotData: FlDotData(show: false),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          Spacer(),
+
+          // **Weight Loss Success Text**
+          const Text(
+            "80% of Cal AI users maintain their weight loss even 6 months later",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: Colors.grey),
+          ),
+          const SizedBox(height: 10),
+
+          // **Next Step Button**
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               foregroundColor: WHITE,
@@ -917,6 +973,7 @@ class _CustomerDetailsCollectScreenState
             },
             child: const Text("Next Step"),
           ),
+          const SizedBox(height: 10),
         ],
       ),
     );
@@ -940,150 +997,485 @@ class _CustomerDetailsCollectScreenState
     ];
 
     return Padding(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 25),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "Please select your Date of Birth",
-            style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+            "When were you \nborn?",
+            style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
           ),
-          const Text("This will be used to personalize your plan"),
-          const Spacer(),
-          Column(
+          const SizedBox(height: 5),
+
+          // Subtitle
+          const Text(
+            "This will be used to calibrate your custom plan.",
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          const SizedBox(height: 40),
+
+          // DOB Selection - ListWheelScrollView
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Day Selection
-                  SizedBox(
-                    height: 200,
-                    width: 80,
-                    child: ListWheelScrollView.useDelegate(
-                      controller:
-                          FixedExtentScrollController(initialItem: day - 1),
-                      itemExtent: 50,
-                      diameterRatio: 5,
-                      childDelegate: ListWheelChildBuilderDelegate(
-                        builder: (context, index) {
-                          bool isSelected = (index + 1) == day;
-                          return Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: isSelected ? GREY1 : Colors.transparent,
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${index + 1}',
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                            ),
-                          );
-                        },
-                        childCount: 31,
-                      ),
-                      onSelectedItemChanged: (index) {
-                        setState(() {
-                          day = index + 1;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  SizedBox(
-                    height: 200,
-                    width: 120,
-                    child: ListWheelScrollView.useDelegate(
-                      controller:
-                          FixedExtentScrollController(initialItem: month - 1),
-                      itemExtent: 50,
-                      diameterRatio: 5,
-                      childDelegate: ListWheelChildBuilderDelegate(
-                        builder: (context, index) {
-                          bool isSelected = (index + 1) == month;
-                          return Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: isSelected ? GREY1 : Colors.transparent,
-                            ),
-                            child: Center(
-                              child: Text(
-                                monthNames[index],
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                            ),
-                          );
-                        },
-                        childCount: 12,
-                      ),
-                      onSelectedItemChanged: (index) {
-                        setState(() {
-                          month = index + 1;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  SizedBox(
-                    height: 200,
-                    width: 80,
-                    child: ListWheelScrollView.useDelegate(
-                      controller:
-                          FixedExtentScrollController(initialItem: year - 1),
-                      itemExtent: 50,
-                      diameterRatio: 5,
-                      childDelegate: ListWheelChildBuilderDelegate(
-                        builder: (context, index) {
-                          bool isSelected = (index + 1) == year;
-                          return Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              color: isSelected ? GREY1 : Colors.transparent,
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${index + 1960}',
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                            ),
-                          );
-                        },
-                        childCount: 150,
-                      ),
-                      onSelectedItemChanged: (index) {
-                        setState(() {
-                          year = index + 1;
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              )
+              _buildWheelSelector(
+                itemCount: 12,
+                initialItem: month - 1,
+                itemBuilder: (index) => monthNames[index],
+                onSelectedItemChanged: (index) {
+                  setState(() {
+                    month = index + 1;
+                  });
+                },
+                width: 100,
+              ),
+              const SizedBox(width: 10),
+              _buildWheelSelector(
+                itemCount: 31,
+                initialItem: day - 1,
+                itemBuilder: (index) => (index + 1).toString(),
+                onSelectedItemChanged: (index) {
+                  setState(() {
+                    day = index + 1;
+                  });
+                },
+                width: 80,
+              ),
+              const SizedBox(width: 10),
+              _buildWheelSelector(
+                itemCount: 25,
+                initialItem: year - 2000,
+                itemBuilder: (index) => (2000 + index).toString(),
+                onSelectedItemChanged: (index) {
+                  setState(() {
+                    year = 2000 + index;
+                  });
+                },
+                width: 100,
+              ),
             ],
           ),
+          Spacer(),
+
+          // Next Button
+          Center(
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50.0),
+                ),
+                minimumSize: Size(size.width * 0.9, 55),
+              ),
+              onPressed: () {
+                DateTime dob = DateTime(year, month, day);
+                if (_tabController.index < _tabController.length - 1) {
+                  _tabController.animateTo(_tabController.index + 1);
+                }
+              },
+              child: const Text("Next", style: TextStyle(fontSize: 18)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+// Reusable function for Wheel Selectors
+  Widget _buildWheelSelector({
+    required int itemCount,
+    required int initialItem,
+    required String Function(int) itemBuilder,
+    required ValueChanged<int> onSelectedItemChanged,
+    required double width,
+  }) {
+    return SizedBox(
+      height: 200,
+      width: width,
+      child: ListWheelScrollView.useDelegate(
+        controller: FixedExtentScrollController(initialItem: initialItem),
+        itemExtent: 50,
+        diameterRatio: 2,
+        physics: FixedExtentScrollPhysics(),
+        overAndUnderCenterOpacity: 0.3,
+        childDelegate: ListWheelChildBuilderDelegate(
+          builder: (context, index) {
+            bool isSelected = index == initialItem;
+            return AnimatedContainer(
+              duration: Duration(milliseconds: 300),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: isSelected
+                    ? Colors.black.withOpacity(0.1)
+                    : Colors.transparent,
+              ),
+              child: Center(
+                child: Text(
+                  itemBuilder(index),
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal),
+                ),
+              ),
+            );
+          },
+          childCount: itemCount,
+        ),
+        onSelectedItemChanged: onSelectedItemChanged,
+      ),
+    );
+  }
+
+  Widget _buildgoal() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 20),
+          const Text(
+            "What is your goal?",
+            style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "This helps us generate a plan for your calorie intake.",
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
           const Spacer(),
+
+          goalOption("Gain Weight"),
+          goalOption("Maintain"),
+          goalOption("Lose Weight"),
+
+          const Spacer(),
+
+          // Updated button to match _buildOtherappTab()
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              foregroundColor: WHITE,
-              backgroundColor: BLACK,
+              foregroundColor: Colors.white, // Text color
+              backgroundColor: selectedGoal.isNotEmpty
+                  ? Colors.black
+                  : Colors.grey, // Dynamic color
               elevation: 1,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),
               ),
-              minimumSize: Size(size.width * 1, size.height * 0.08),
+              minimumSize: const Size(
+                  double.infinity, 55), // Same as _buildOtherappTab()
             ),
-            onPressed: () {
-              DateTime dob = DateTime(year, month, day);
-              if (_tabController.index < _tabController.length - 1) {
-                _tabController.animateTo(_tabController.index + 1);
-              }
-            },
-            child: const Text("Next Step"),
+            onPressed: selectedGoal.isNotEmpty
+                ? () {
+                    if (selectedGoal == "Maintain") {
+                      _tabController.animateTo(_tabController.index + 3);
+                    } else {
+                      _tabController.animateTo(_tabController.index + 1);
+                    }
+                  }
+                : null, // Disables button if no goal is selected
+            child: const Text(
+              "Next",
+              style: TextStyle(fontSize: 18, color: Colors.white),
+            ),
           ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget goalOption(String text) {
+    bool isSelected = selectedGoal == text;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedGoal = text;
+        });
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.black : Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          child: Center(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 16,
+                color: isSelected ? Colors.white : Colors.black,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChooseWeight() {
+    minWeight = isMetric ? 40 : 90;
+    maxWeight = isMetric ? 150 : 330;
+    var measure = isMetric ? "Kg" : "Lb";
+
+    int visibleMarkers = 29;
+    double markerSpacing = 12.0;
+
+    // Centering Offset Calculation
+    double centerOffset = ((visibleMarkers ~/ 2) * markerSpacing).toDouble();
+
+    ScrollController _scrollController = ScrollController(
+      initialScrollOffset: (weight - minWeight) * markerSpacing - centerOffset,
+    );
+
+    _scrollController.addListener(() {
+      setState(() {
+        int newWeight = (minWeight +
+                (_scrollController.offset + centerOffset) / markerSpacing)
+            .round();
+        chooseWeight =
+            newWeight.clamp(minWeight.toInt(), maxWeight.toInt()).toString();
+      });
+    });
+
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Choose your desired weight?",
+            style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+          ),
+          const Spacer(),
+
+          Center(
+            child: Text(
+              "$selectedGoal $chooseWeight",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Display Selected Weight
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  "$weight $measure",
+                  style: const TextStyle(
+                      fontSize: 32, fontWeight: FontWeight.bold),
+                ),
+                const Icon(Icons.keyboard_arrow_down,
+                    size: 30, color: Colors.black),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Scrollable Weight Picker
+          Center(
+            child: SizedBox(
+              height: 80,
+              width: visibleMarkers * markerSpacing,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Divider(thickness: 2, color: Colors.grey[300]),
+
+                  // Scrollable Weight Values
+                  SingleChildScrollView(
+                    controller: _scrollController,
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: List.generate(
+                        (maxWeight - minWeight).toInt() + 1,
+                        (index) {
+                          int displayWeight = (minWeight + index).toInt();
+                          bool isSelected = displayWeight == weight;
+
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 3,
+                                  height: isSelected ? 30 : 15,
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? Colors.black
+                                        : Colors.grey[400],
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                if (index % 2 == 0) const SizedBox(height: 5),
+                                if (index % 2 == 0)
+                                  Text(
+                                    "$displayWeight",
+                                    style: TextStyle(
+                                      fontSize: isSelected ? 18 : 14,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      color: isSelected
+                                          ? Colors.black
+                                          : Colors.grey[400],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                  // Fixed Center Marker
+                  Positioned(
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 3,
+                      height: 35,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const Spacer(),
+
+          // Next Button
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50.0),
+                ),
+                minimumSize: const Size(double.infinity, 55),
+              ),
+              onPressed: () {
+                double scrollOffset = _scrollController.offset;
+
+                scrollOffset = scrollOffset.clamp(
+                  0,
+                  (maxWeight - minWeight) * markerSpacing - centerOffset,
+                );
+
+                _scrollController.animateTo(
+                  scrollOffset,
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOut,
+                );
+
+                if (_tabController.index < _tabController.length - 1) {
+                  _tabController.animateTo(_tabController.index + 1);
+                }
+              },
+              child: const Text("Next",
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeightLosingorGaining() {
+    Size size = MediaQuery.of(context).size;
+    var measure = isMetric ? "Kg" : "Lb";
+    return SizedBox.expand(
+      // Ensures the Column takes full height
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30.0),
+            child: Column(
+              children: [
+                SizedBox(height: size.height * 0.25),
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                    children: [
+                      TextSpan(
+                          text: "$selectedGoal"), // Shows the selected goal
+                      TextSpan(
+                        text: " ",
+                        style: TextStyle(color: Colors.orange),
+                      ),
+                      TextSpan(
+                        text: selectedGoal == "Gain Weight"
+                            ? "${(int.tryParse(chooseWeight.replaceAll(".0", "")) ?? weight) - weight} $measure"
+                            : "${weight - (int.tryParse(chooseWeight.replaceAll(".0", "")) ?? weight)} ${measure}",
+                        style: TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange, // Highlighting the difference
+                        ),
+                      ),
+                      TextSpan(
+                        text: " is a realistic target. It’s not hard at all!",
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 15),
+
+                // Subtitle
+                Text(
+                  "90% of users say that the change is obvious after using Cal AI and it is not easy to rebound.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Spacer(), // Pushes the button to the bottom
+
+          // Next Button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                minimumSize: Size(double.infinity, 55),
+              ),
+              onPressed: () {
+                if (_tabController.index < _tabController.length - 1) {
+                  _tabController.animateTo(_tabController.index + 1);
+                }
+              },
+              child: Text("Next", style: TextStyle(fontSize: 18)),
+            ),
+          ),
+
+          SizedBox(height: 40), // Spacing from bottom
         ],
       ),
     );
@@ -1980,9 +2372,8 @@ class _CustomerDetailsCollectScreenState
             onPressed: () {
               // if (workouts.isNotEmpty) {
               //   if (_tabController.index < _tabController.length - 1) {
-                  Navigator.of(context).pushReplacement(MaterialPageRoute(
-                      builder: (BuildContext context) =>
-                          const DashboardScreen()));
+              Navigator.of(context).pushReplacement(MaterialPageRoute(
+                  builder: (BuildContext context) => const DashboardScreen()));
               //   }
               // } else {
               //   ScaffoldMessenger.of(context).showSnackBar(

@@ -2,11 +2,8 @@ import 'dart:async';
 
 import 'package:calai/Screens/Dashboard/Dashboard.dart';
 import 'package:calai/Screens/Stepers/Stepers.dart';
-import 'package:calai/Services/Services.dart';
 import 'package:calai/utils/Color_resources.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -28,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _hasToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
       token = prefs.getString('token');
-     Timer(const Duration(seconds: 3), () {
+     Timer(const Duration(milliseconds: 1), () {
       
         if (token != null) {
           Navigator.of(context).pushReplacement(MaterialPageRoute(
