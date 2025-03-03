@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:calai/Screens/Dashboard/Dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'package:calai/utils/Color_resources.dart';
@@ -36,6 +37,10 @@ class _CustomerDetailsCollectScreenState
   String? token = "";
   String selectedGoal = "";
   String chooseWeight = "";
+  String selectedOption = "";
+  String selectedDiet = "";
+  String selectedAccomplish = "";
+  double _selectedWeight = 0.5;
   late double minWeight;
   late double maxWeight;
 
@@ -44,6 +49,12 @@ class _CustomerDetailsCollectScreenState
     "Finalizing results...",
     "Estimating your metabolic age..."
   ];
+
+  Map<String, TimeOfDay?> selectedTimes = {
+    "First Meal": null,
+    "Second Meal": null,
+    "Third Meal": null,
+  };
 
   List<String> values = ["Calories", "Crabs", "Protiens", "Fats"];
   int currentTextIndex = 0;
@@ -62,13 +73,25 @@ class _CustomerDetailsCollectScreenState
   double progress = 0.0;
   var box;
 
+  late int selectedHour;
+  late int selectedMinute;
+  late String selectedPeriod;
+
   final InAppReview inAppReview = InAppReview.instance;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 15, vsync: this);
+    _tabController = TabController(length: 25, vsync: this);
     _tabController.addListener(_updateProgress);
+
+    DateTime now = DateTime.now();
+
+    // ✅ Initialize class variables correctly
+    selectedHour =
+        now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
+    selectedMinute = now.minute;
+    selectedPeriod = now.hour >= 12 ? "PM" : "AM";
   }
 
   Future<UserCredential?> signInWithGoogle() async {
@@ -229,8 +252,14 @@ class _CustomerDetailsCollectScreenState
                 _buildgoal(),
                 _buildChooseWeight(),
                 _buildWeightLosingorGaining(),
-                _buildDietTab(),
+                _buildSpeedPerWeek(),
+                _buildCalAiVsYourOwn(),
+                _buildStoppingToReacheYourGoals(),
+                _buildSpecificDiet(),
+                // _buildDietTab(),
                 _buildAccomplishTab(),
+                _buildCrushYourGoal(),
+                _buildTimeEveryDay(),
                 _buildRatingTab(),
                 _buildThanksTab(),
                 _buildNotificationTab(),
@@ -1481,6 +1510,541 @@ class _CustomerDetailsCollectScreenState
     );
   }
 
+  Widget _buildSpeedPerWeek() {
+    Size size = MediaQuery.of(context).size;
+    var measure = isMetric ? "Kg" : "Lb";
+    double minValue = isMetric ? 0.5 : 0.2;
+    double maxValue = isMetric ? 1.5 : 3.0;
+    int divisions = isMetric ? 10 : 14; // To maintain step increments
+    String _getRecommendationText() {
+      if (_selectedWeight <= (minValue + (maxValue - minValue) / 3)) {
+        return "Slow Progress, Safe & Steady";
+      } else if (_selectedWeight > (minValue + (maxValue - minValue) / 3) &&
+          _selectedWeight < (maxValue - (maxValue - minValue) / 3)) {
+        return "Recommended";
+      } else {
+        return "You may feel very tried and \ndevelop loos skin";
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 10),
+          Text(
+            "How fast do you want to reach your goal?",
+            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+          ),
+          Spacer(),
+          const SizedBox(height: 25),
+          Text(
+            "$selectedGoal speed per week",
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            "${_selectedWeight.toStringAsFixed(1)} $measure",
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(
+                Icons.slow_motion_video,
+                size: 30,
+                color: _selectedWeight <= (minValue + (maxValue - minValue) / 3)
+                    ? Colors.red
+                    : Colors.black54, // Highlight if in slow range
+              ),
+              Icon(
+                Icons.directions_run,
+                size: 30,
+                color:
+                    (_selectedWeight > (minValue + (maxValue - minValue) / 3) &&
+                            _selectedWeight <
+                                (maxValue - (maxValue - minValue) / 3))
+                        ? Colors.red
+                        : Colors.black54, // Highlight if in medium range
+              ),
+              Icon(
+                Icons.speed,
+                size: 30,
+                color: _selectedWeight >= (maxValue - (maxValue - minValue) / 3)
+                    ? Colors.red
+                    : Colors.black54, // Highlight if in fast range
+              ),
+            ],
+          ),
+          Slider(
+            value: _selectedWeight,
+            min: minValue,
+            max: maxValue,
+            divisions: divisions,
+            activeColor: Colors.black,
+            inactiveColor: Colors.grey[300],
+            label: "${_selectedWeight.toStringAsFixed(1)} $measure",
+            onChanged: (double value) {
+              setState(() {
+                _selectedWeight = value;
+              });
+            },
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("$minValue $measure",
+                  style: TextStyle(color: Colors.black54)),
+              Text(
+                "${_selectedWeight.toStringAsFixed(1)} $measure",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text("$maxValue $measure",
+                  style: TextStyle(color: Colors.black54)),
+            ],
+          ),
+          Spacer(),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 15),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(
+                _getRecommendationText(), // Dynamic Text
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          Spacer(),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              minimumSize: Size(double.infinity, 55),
+            ),
+            onPressed: () {
+              if (_tabController.index < _tabController.length - 1) {
+                _tabController.animateTo(_tabController.index + 1);
+              }
+            },
+            child: Text(
+              "Next",
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalAiVsYourOwn() {
+    return Padding(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title
+          Text(
+            "Lose twice as much weight with Cal AI vs on your own",
+            style: TextStyle(
+              fontSize: 34,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 40),
+
+          // Comparison Box
+          Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey[200], // Light background
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Comparison Cards
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.end, // Align at bottom
+                  children: [
+                    // Without Cal AI
+                    SizedBox(
+                      width: 100, // Adjust width as needed
+                      child: Card(
+                        child: Column(
+                          children: [
+                            SizedBox(height: 5),
+                            Text(
+                              "Without\nCal AI",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.w500),
+                            ),
+                            SizedBox(height: 90),
+                            Container(
+                              width: 100, // Increase width of inner container
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Align(
+                                alignment: Alignment.bottomCenter,
+                                child: Padding(
+                                  padding: EdgeInsets.only(bottom: 20),
+                                  child: Text(
+                                    "20%",
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // With Cal AI
+                    SizedBox(
+                      width: 100,
+                      child: Card(
+                        child: Column(
+                          children: [
+                            SizedBox(height: 5),
+                            Text(
+                              "With\nCal AI",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.w500),
+                            ),
+                            SizedBox(height: 10),
+                            Stack(
+                              alignment: Alignment.bottomCenter,
+                              children: [
+                                // Base Container (same height as "Without Cal AI")
+                                Container(
+                                  width: 60,
+                                  height: 140, // Set same height
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                Container(
+                                  width: 100,
+                                  height: 140,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      "2X",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 15),
+
+                // Description (Now properly positioned below the Row)
+                Text(
+                  "Cal AI makes it easy and holds \nyou accountable.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+
+          Spacer(),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              minimumSize: Size(double.infinity, 55),
+            ),
+            onPressed: () {
+              if (_tabController.index < _tabController.length - 1) {
+                _tabController.animateTo(_tabController.index + 1);
+              }
+            },
+            child: Text(
+              "Next",
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+          SizedBox(height: 25),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStoppingToReacheYourGoals() {
+    Size size = MediaQuery.of(context).size;
+
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "What's stopping you from reaching your goals?",
+            style: TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: size.height * 0.03),
+
+          // Options List with selection
+          Column(
+            children: [
+              _buildOptionCard(size, Icons.bar_chart, "Lack of consistency"),
+              _buildOptionCard(
+                  size, Icons.bar_chart, "Unhealthy eating habits"),
+              _buildOptionCard(size, Icons.handshake, "Lack of support"),
+              _buildOptionCard(size, Icons.calendar_today, "Busy schedule"),
+              _buildOptionCard(size, Icons.local_fire_department,
+                  "Lack of meal inspiration"),
+            ],
+          ),
+
+          Spacer(),
+
+          // Next Button (Enabled only when an option is selected)
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  selectedOption.isNotEmpty ? Colors.black : Colors.grey,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              minimumSize: Size(double.infinity, 55),
+            ),
+            onPressed: selectedOption.isNotEmpty
+                ? () {
+                    if (_tabController.index < _tabController.length - 1) {
+                      _tabController.animateTo(_tabController.index + 1);
+                    }
+                  }
+                : null, // Disables button if no option is selected
+            child: Text(
+              "Next",
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method for option card with selection logic
+  Widget _buildOptionCard(Size size, IconData icon, String text) {
+    bool isSelected = selectedOption == text;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedOption = text;
+        });
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Container(
+          width: size.width,
+          padding: EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.black : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 5,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Circular icon container
+              Container(
+                width: 40, // Circle size
+                height: 30, // Circle size
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle, // Makes it circular
+                ),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    size: 24,
+                    color: Colors.black, // Inverted color
+                  ),
+                ),
+              ),
+              SizedBox(width: 15),
+              Text(
+                text,
+                style: TextStyle(
+                  fontSize: size.width * 0.045,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? Colors.white : Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSpecificDiet() {
+    Size size = MediaQuery.of(context).size;
+
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Do you follow a \nspecific diet",
+            style: TextStyle(
+              fontSize: 34,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: size.height * 0.07),
+
+          // Options List with selection
+          Column(
+            children: [
+              _buildSpecifiDietCard(size, Icons.restaurant, "Classic"),
+              _buildSpecifiDietCard(size, Icons.set_meal, "Pescatarian"),
+              _buildSpecifiDietCard(size, Icons.eco, "Vegetarian"),
+              _buildSpecifiDietCard(size, Icons.grass, "Vegan"),
+            ],
+          ),
+
+          Spacer(),
+
+          // Next Button (Enabled only when an option is selected)
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  selectedDiet.isNotEmpty ? Colors.black : Colors.grey,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              minimumSize: Size(double.infinity, 55),
+            ),
+            onPressed: selectedDiet.isNotEmpty
+                ? () {
+                    if (_tabController.index < _tabController.length - 1) {
+                      _tabController.animateTo(_tabController.index + 1);
+                    }
+                  }
+                : null, // Disables button if no option is selected
+            child: Text(
+              "Next",
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method for option card with selection logic
+  Widget _buildSpecifiDietCard(Size size, IconData icon, String text) {
+    bool isSelected = selectedDiet == text;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedDiet = text;
+        });
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Container(
+          width: size.width,
+          padding: EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.black : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 5,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Circular icon container
+              Container(
+                width: 40, // Circle size
+                height: 40, // Circle size
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle, // Makes it circular
+                ),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    size: 24,
+                    color: Colors.black, // Inverted color
+                  ),
+                ),
+              ),
+              SizedBox(width: 15),
+              Text(
+                text,
+                style: TextStyle(
+                  fontSize: size.width * 0.045,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? Colors.white : Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDietTab() {
     Size size = MediaQuery.of(context).size;
     return Padding(
@@ -1620,141 +2184,479 @@ class _CustomerDetailsCollectScreenState
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           const Text(
-            "What would you like to accomplish",
-            style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+            "What would you like \nto accomplish?",
+            style: TextStyle(
+              fontSize: 34.0,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          // const Text("This will be used to callibrate your custom plan"),
-          const Spacer(),
+          SizedBox(height: size.height * 0.07),
           Column(
             children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor:
-                      accomplish == "Eat and live healthier" ? WHITE : BLACK,
-                  backgroundColor:
-                      accomplish == "Eat and live healthier" ? BLACK : GREY2,
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  minimumSize: Size(size.width * 1, size.height * 0.08),
-                ),
-                onPressed: () {
-                  setState(() {
-                    accomplish = "Eat and live healthier";
-                  });
-                },
-                child: const Row(
-                  children: [
-                    Icon(Icons.food_bank),
-                    Text("Eat and live healthier"),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor:
-                      accomplish == "Boost my energy and mood" ? WHITE : BLACK,
-                  backgroundColor:
-                      accomplish == "Boost my energy and mood" ? BLACK : GREY2,
-                  elevation: 1,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  minimumSize: Size(size.width * 1, size.height * 0.08),
-                ),
-                onPressed: () {
-                  setState(() {
-                    accomplish = "Boost my energy and mood";
-                  });
-                },
-                child: const Row(
-                  children: [
-                    Icon(Icons.dining),
-                    Text("Boost my energy and mood"),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor:
-                        accomplish == "Stay motivated and consistent"
-                            ? WHITE
-                            : BLACK,
-                    backgroundColor:
-                        accomplish == "Stay motivated and consistent"
-                            ? BLACK
-                            : GREY2,
-                    elevation: 1,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    minimumSize: Size(size.width * 1, size.height * 0.08),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      diet = "Stay motivated and consistent";
-                    });
-                  },
-                  child: const Row(
-                    children: [
-                      Icon(Icons.apple),
-                      Text("Stay motivated and consistent"),
-                    ],
-                  )),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: accomplish == "Feel better about my body"
-                        ? WHITE
-                        : BLACK,
-                    backgroundColor: accomplish == "Feel better about my body"
-                        ? BLACK
-                        : GREY2,
-                    elevation: 1,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    minimumSize: Size(size.width * 1, size.height * 0.08),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      accomplish = "Feel better about my body";
-                    });
-                  },
-                  child: const Row(
-                    children: [
-                      Icon(Icons.apple_sharp),
-                      Text("Feel better about my body"),
-                    ],
-                  )),
+              _buildAccomplishCard(size, Icons.apple, "Eat and live healthier"),
+              _buildAccomplishCard(
+                  size, Icons.wb_sunny, "Boost my energy and mood"),
+              _buildAccomplishCard(
+                  size, Icons.fitness_center, "Stay motivated and consistent"),
+              _buildAccomplishCard(
+                  size, Icons.self_improvement, "Feel better about my body"),
             ],
           ),
           const Spacer(),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              foregroundColor: WHITE,
-              backgroundColor: accomplish.isNotEmpty ? BLACK : GREY1,
-              elevation: 1,
+              backgroundColor:
+                  selectedAccomplish.isNotEmpty ? Colors.black : Colors.grey,
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(50.0),
+                borderRadius: BorderRadius.circular(30),
               ),
-              minimumSize: Size(size.width * 1, size.height * 0.08),
+              minimumSize: Size(double.infinity, 55),
             ),
-            onPressed: () {
-              if (accomplish.isNotEmpty) {
-                if (_tabController.index < _tabController.length - 1) {
-                  _tabController.animateTo(_tabController.index + 1);
-                  StoreRedirect.redirect(androidAppId: "com.farm2bag");
-                }
-              }
-            },
-            child: const Text("Next Step"),
+            onPressed: selectedAccomplish.isNotEmpty
+                ? () {
+                    if (_tabController.index < _tabController.length - 1) {
+                      _tabController.animateTo(_tabController.index + 1);
+                    }
+                  }
+                : null, // Disables button if no option is selected
+            child: Text(
+              "Next",
+              style: TextStyle(fontSize: 16, color: Colors.white),
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAccomplishCard(Size size, IconData icon, String text) {
+    bool isSelected = selectedAccomplish == text;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedAccomplish = text;
+        });
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Container(
+          width: size.width,
+          padding: EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.black : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 5,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Circular icon container
+              Container(
+                width: 40, // Circle size
+                height: 40, // Circle size
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle, // Makes it circular
+                ),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    size: 24,
+                    color: Colors.black, // Inverted color
+                  ),
+                ),
+              ),
+              SizedBox(width: 15),
+              Text(
+                text,
+                style: TextStyle(
+                  fontSize: size.width * 0.045,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? Colors.white : Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCrushYourGoal() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "You have great \npotential to crush \nyour \ngoal",
+            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 20),
+
+          // Graph Card
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  spreadRadius: 3,
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Your weight transition",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                AspectRatio(
+                    aspectRatio: 1.8,
+                    child: LineChart(
+                      LineChartData(
+                        gridData: FlGridData(show: false),
+                        titlesData: FlTitlesData(
+                          leftTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: true)),
+                          rightTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          topTitles: AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                switch (value.toInt()) {
+                                  case 0:
+                                    return Padding(
+                                      padding: EdgeInsets.only(top: 8),
+                                      child: Text("3 Days"),
+                                    );
+                                  case 1:
+                                    return Padding(
+                                      padding: EdgeInsets.only(top: 8),
+                                      child: Text("7 Days"),
+                                    );
+                                  case 2:
+                                    return Padding(
+                                      padding: EdgeInsets.only(top: 8),
+                                      child: Text("30 Days"),
+                                    );
+                                  default:
+                                    return SizedBox();
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                        borderData: FlBorderData(
+                          show: true,
+                          border: Border(
+                            left: BorderSide(
+                                color: Colors.black, width: 2), // Left border
+                            bottom: BorderSide(
+                                color: Colors.black, width: 2), // Bottom border
+                          ),
+                        ),
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: [
+                              FlSpot(0, 1.5),
+                              FlSpot(1, 2.8),
+                              FlSpot(2, 4.2),
+                            ],
+                            isCurved: false,
+                            color: Colors.brown,
+                            barWidth: 3,
+                            dotData: FlDotData(show: true),
+                            belowBarData: BarAreaData(
+                              show: true,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.brown.withOpacity(0.5),
+                                  Colors.brown.withOpacity(0.1),
+                                ],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+              ],
+            ),
+          ),
+          Spacer(),
+
+          // Next Button
+          ElevatedButton(
+            onPressed: () {
+              if (_tabController.index < _tabController.length - 1) {
+                _tabController.animateTo(_tabController.index + 1);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  selectedAccomplish.isNotEmpty ? Colors.black : Colors.grey,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              minimumSize: Size(double.infinity, 55),
+            ),
+            child: Text(
+              "Next",
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600),
+            ),
+          ),
+          SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeEveryDay() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Progress Bar
+
+          Text(
+            "Do you typically eat \nyour meals at the \nsame time everyday?",
+            style: TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 30),
+
+          // Meal Options
+          _buildMealOption("First Meal"),
+          _buildMealOption("Second Meal"),
+          _buildMealOption("Third Meal"),
+          Spacer(),
+          ElevatedButton(
+            onPressed: () {
+              if (_tabController.index < _tabController.length - 1) {
+                _tabController.animateTo(_tabController.index + 1);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  selectedAccomplish.isNotEmpty ? Colors.black : Colors.grey,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              minimumSize: Size(double.infinity, 55),
+            ),
+            child: Text(
+              "Next",
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600),
+            ),
+          ),
+          SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMealOption(String title) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      margin: EdgeInsets.only(bottom: 15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade300,
+            blurRadius: 6,
+            spreadRadius: 2,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.restaurant, color: Colors.orange, size: 30),
+          SizedBox(width: 15),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => _selectTime(context, title),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    selectedTimes[title] == null
+                        ? "Add Time"
+                        : MaterialLocalizations.of(context).formatTimeOfDay(
+                            selectedTimes[title]!,
+                            alwaysUse24HourFormat:false,
+                          ),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  SizedBox(width: 5),
+                  Icon(
+                    selectedTimes[title] == null ? Icons.add : Icons.edit,
+                    size: 18,
+                    color: Colors.black,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _selectTime(BuildContext context, String title) async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateModal) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Set Time",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildPicker(1, 12, selectedHour, (val) {
+                        setStateModal(() => selectedHour = val);
+                      }),
+                      Text(":", style: TextStyle(fontSize: 24)),
+                      _buildPicker(0, 59, selectedMinute, (val) {
+                        setStateModal(() => selectedMinute = val);
+                      }),
+                      _buildPickers(["AM", "PM"], selectedPeriod, (val) {
+                        setStateModal(() => selectedPeriod = val);
+                      }),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildButton("Cancel", Colors.black, () {
+                        Navigator.pop(context);
+                      }),
+                      _buildButton("Apply", Colors.black, () {
+                        // Update selectedTimes in parent widget
+                        setState(() {
+                          selectedTimes[title] = TimeOfDay(
+                            hour: selectedPeriod == "AM"
+                                ? selectedHour
+                                : selectedHour + 12,
+                            minute: selectedMinute,
+                          );
+                        });
+
+                        Navigator.pop(context);
+                      }),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPicker(int min, int max, int selected, Function(int) onChange) {
+    return Container(
+      width: 50,
+      height: 150,
+      child: CupertinoPicker(
+        scrollController:
+            FixedExtentScrollController(initialItem: selected - min),
+        itemExtent: 40,
+        onSelectedItemChanged: (index) => onChange(index + min),
+        children: List.generate(max - min + 1, (index) {
+          return Center(
+            child: Text(
+              "${index + min}".padLeft(2, '0'),
+              style: TextStyle(fontSize: 20),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildPickers(
+      List<String> options, String selected, Function(String) onChange) {
+    return Container(
+      width: 70,
+      height: 150,
+      child: CupertinoPicker(
+        scrollController:
+            FixedExtentScrollController(initialItem: options.indexOf(selected)),
+        itemExtent: 40,
+        onSelectedItemChanged: (index) => onChange(options[index]),
+        children: options
+            .map((e) => Center(child: Text(e, style: TextStyle(fontSize: 20))))
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _buildButton(String text, Color color, VoidCallback onPressed) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        side: BorderSide(color: color),
+        padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+      ),
+      onPressed: onPressed,
+      child: Text(text, style: TextStyle(color: color, fontSize: 16)),
     );
   }
 

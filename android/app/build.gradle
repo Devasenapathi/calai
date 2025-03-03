@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.calai"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -21,8 +21,8 @@ android {
 
     defaultConfig {
         applicationId = "com.example.calai"
-        minSdk = 23
-        targetSdk = flutter.targetSdkVersion
+        minSdk 23
+        targetSdk 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
